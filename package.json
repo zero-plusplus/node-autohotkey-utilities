@@ -1,5 +1,5 @@
 {
-  "name": "autohotkey-utilities",
+  "name": "@zero-plusplus/autohotkey-utilities",
   "version": "0.0.0",
   "description": "",
   "homepage": "https://github.com/zero-plusplus/node-autohotkey-utilities#readme",
@@ -12,6 +12,7 @@
   },
   "license": "MIT",
   "author": "zero-plusplus",
+  "main": "build/src/index.js",
   "scripts": {
     "build": "tsc",
     "test": "jest",
