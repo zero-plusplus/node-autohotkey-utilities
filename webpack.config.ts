@@ -11,7 +11,7 @@ export default {
   mode: 'production',
   entry: './src/index.ts',
   output: {
-    path: path.resolve(__dirname, 'build'),
+    path: path.resolve(__dirname, './'),
     filename: 'index.js',
     libraryTarget: 'commonjs2',
     devtoolModuleFilenameTemplate: '../[resource-path]',

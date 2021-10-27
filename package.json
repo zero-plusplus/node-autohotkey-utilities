@@ -12,7 +12,7 @@
   },
   "license": "MIT",
   "author": "zero-plusplus",
-  "main": "build/index.js",
+  "main": "index.js",
   "scripts": {
     "build": "webpack-cli -c ./webpack.config.ts",
     "test": "jest",
