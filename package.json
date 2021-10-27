@@ -1,0 +1,26 @@
+{
+  "name": "autohotkey-utilities",
+  "version": "0.0.0",
+  "description": "",
+  "homepage": "https://github.com/zero-plusplus/node-autohotkey-utilities#readme",
+  "bugs": {
+    "url": "https://github.com/zero-plusplus/node-autohotkey-utilities/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zero-plusplus/node-autohotkey-utilities.git"
+  },
+  "license": "MIT",
+  "author": "zero-plusplus",
+  "scripts": {
+    "test": "jest"
+  },
+  "devDependencies": {
+    "@types/jest": "^27.0.2",
+    "@zero-plusplus/eslint-my-rules": "github:zero-plusplus/eslint-my-rules",
+    "jest": "^27.3.1",
+    "ts-jest": "^27.0.7",
+    "ts-node": "^10.4.0",
+    "typescript": "^4.4.4"
+  }
+}
