@@ -12,18 +12,22 @@
   },
   "license": "MIT",
   "author": "zero-plusplus",
-  "main": "build/src/index.js",
+  "main": "build/index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "webpack-cli -c ./webpack.config.ts",
     "test": "jest",
     "prepare": "npm run build"
   },
   "devDependencies": {
     "@types/jest": "^27.0.2",
+    "@types/webpack": "^5.28.0",
     "@zero-plusplus/eslint-my-rules": "github:zero-plusplus/eslint-my-rules",
     "jest": "^27.3.1",
     "ts-jest": "^27.0.7",
+    "ts-loader": "^9.2.6",
     "ts-node": "^10.4.0",
-    "typescript": "^4.4.4"
+    "types-tsconfig": "^1.2.1",
+    "typescript": "^4.4.4",
+    "webpack-cli": "^4.9.1"
   }
 }

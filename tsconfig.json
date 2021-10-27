@@ -28,6 +28,7 @@
 	"include": [
 		"src/**/*",
 		"test/**/*",
-		"jest.config.ts"
+		"jest.config.ts",
+		"webpack.config.ts"
 	]
 }
