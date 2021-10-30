@@ -1,1 +1,1 @@
-﻿MsgBox otherscript
+﻿LocalLibFunction_MsgBox("otherscript")
