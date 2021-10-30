@@ -1,0 +1,5 @@
+﻿NestLibFunction()
+{
+    LocalLibFunction();
+    MsgBox NestLibFunction
+}

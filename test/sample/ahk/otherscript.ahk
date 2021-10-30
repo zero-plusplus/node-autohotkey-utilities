@@ -1,0 +1,1 @@
+﻿LocalLibFunction_MsgBox("otherscript")
