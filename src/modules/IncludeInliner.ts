@@ -20,18 +20,23 @@ export class IncludeInliner {
    * @param libraryTypes
    */
   public exec(rootPath: string, overwriteVariables?: Partial<SupportVariables>, pathReplacer: (includeInfo: IncludeInfo) => string = (includeInfo): string => includeInfo.path): string {
+    const variables = {
+      ...defaultSupportVariables,
+      ...overwriteVariables,
+    };
+    if (!variables.A_ScriptDir) {
+      variables.A_ScriptDir = path.dirname(rootPath);
+    }
+    if (!variables.A_WorkingDir) {
+      variables.A_WorkingDir = variables.A_ScriptDir;
+    }
+
     const inline = (filePath: string, overwriteVariables?: Partial<SupportVariables>): string => {
       const variables = {
         ...defaultSupportVariables,
         ...overwriteVariables,
-        A_LineFile: path.resolve(rootPath),
+        A_LineFile: path.resolve(filePath),
       };
-      if (!variables.A_ScriptDir) {
-        variables.A_ScriptDir = path.dirname(rootPath);
-      }
-      if (!variables.A_WorkingDir) {
-        variables.A_WorkingDir = variables.A_ScriptDir;
-      }
 
       const source = stripBom(readFileSync(filePath, 'utf-8'));
       return source.replace(/^(?<!;)(?<indent>\s*)#Include(?:|(?<isAgainMode>Again))\s+(?:|(?<isOptional>[*]i)\s+)(?:(?<includePath>[^*\s\r\n<>]+)|<(?<libraryPath>[^*\s\r\n<>]+)>)[^\r\n\S]*(?<linebreak>\r\n|\n)?/gium, (...params) => {
@@ -56,7 +61,7 @@ export class IncludeInliner {
           const inlined = inline(resolvedPath, variables);
           return linebreak ? `${inlined}${String(linebreak)}` : inlined;
         }
-        throw Error(`File not found => "${includeInfo.path}"`);
+        throw Error(`File not found => "${resolvedPath}"`);
       });
     };
 
