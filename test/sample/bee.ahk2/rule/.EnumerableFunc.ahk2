@@ -1,0 +1,26 @@
+﻿class EnumerableFunc extends bee.Enumerable {
+  ;; @type {any[]}
+  params := ""
+  /**
+   * @template KEY, VALUE
+   * @param {object<KEY, VALUE>} source
+   * @param {any[]} params*
+   */
+  __New(source, params*) {
+    super.__New(source)
+    this.args := params
+  }
+  __Enum(numberOfVars) {
+    this._init()
+    this.enumerator := this.toEnumeratorLike()
+    return Enum.bind(this)
+
+    Enum(this, &key, &value := unset) {
+      hasNext := this._next(&key, &value)
+      if (!hasNext) {
+        return false
+      }
+      return true
+    }
+  }
+}

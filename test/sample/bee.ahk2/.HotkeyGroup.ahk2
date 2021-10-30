@@ -1,0 +1,27 @@
+﻿class HotkeyGroup {
+  ;; @type {bee.Hotkey[]}
+  hotkeys := []
+  ;; @type {HotkeyCondition} defaultCondition
+  defaultCondition := ""
+  __New(defaultCondition := "") {
+    this.defaultCondition := defaultCondition
+  }
+  ; __Call(key, params*) {
+  ;   if (bee.hasKey(bee.Hotkey.prototype, key) && bee.isCallable(bee.Hotkey.prototype.%key%)) {
+  ;     for i, hotkeyInstance in this.hotkeys {
+  ;       hotkeyInstance.%key%(params*)
+  ;     }
+  ;     return this
+  ;   }
+  ; }
+  /**
+   * @param {}
+   */
+  add(params*) {
+    hotkeyInstance := params.length == 1 && params[1] is bee.Hotkey
+      ? params[1]
+      : bee.Hotkey(params*)
+    this.hotkeys.push(hotkeyInstance)
+    return this
+  }
+}

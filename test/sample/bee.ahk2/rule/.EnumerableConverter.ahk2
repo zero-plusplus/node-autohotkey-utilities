@@ -1,0 +1,12 @@
+﻿class EnumerableConverter {
+  /**
+   * @param {object | bee.Enumerable} source
+   */
+  static call(source) {
+    if (source is Enumerator || source is bee.Enumerable) {
+      return this.behavior(source)
+    }
+    unwrapped := bee.Enumerable.toEnumeratorLike(source)
+    return this.behavior(unwrapped)
+  }
+}

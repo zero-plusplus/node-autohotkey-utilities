@@ -1,0 +1,188 @@
+﻿class Array extends Array {
+  /**
+   * Returns the index (1-base) of the array matching the `pattern`.
+   * @param {string} str
+   * @param {pattern} pattern
+   * @param {pattern} [times := 1]
+   * @return {number} - The index of searched array. If not found, returns `0`.
+   */
+  static indexOf(arr, patternOrCallback, times := 1) {
+    return bee.Array.search(arr, patternOrCallback, 1, times)
+  }
+  /**
+   * Returns the index (1-base) of the array matching the `pattern`.
+   * @param {pattern} pattern
+   * @param {pattern} [times := 1]
+   * @return {number} - The index of searched array. If not found, returns `0`.
+   */
+  indexOf(params*) {
+    return bee.Array.indexOf(this, params*)
+  }
+  /**
+   * Searches array in the reverse direction and returns the index of the matching element.
+   * @template T
+   * @param {array<T>} arr
+   * @param {pattern} patternOrCallback
+   * @param {pattern} [fromIndex := 1]
+   * @return {number} - The index of searched element. If not found, returns `0`.
+   */
+  static lastIndexOf(arr, patternOrCallback, times := 1) {
+    return bee.Array.search(arr, patternOrCallback, -1, times)
+  }
+  /**
+   * Searches array in the reverse direction and returns the index of the matching element.
+   * @param {pattern} patternOrCallback
+   * @param {pattern} [fromIndex := 1]
+   * @return {number} - The index of searched element. If not found, returns `0`.
+   */
+  lastIndexOf(params*) {
+    return bee.Array.lastIndexOf(this, params*)
+  }
+  /**
+   * Join each element with `delimiter`.
+   * @param {string[] | bee.Enumerable} arr
+   * @param {string} delimiter
+   * @return {string}
+   */
+  static join(arr, delimiter) {
+    str := ""
+    for i, value in bee.query(arr) {
+      str .= value . delimiter
+    }
+    str := RTrim(str, delimiter)
+
+    return str
+  }
+  /**
+   * Join each element with `delimiter`.
+   * @param {string} delimiter
+   * @return {string}
+   */
+  join(delimiter) {
+    return bee.Array.join(this, delimiter)
+  }
+  /**
+   * Returns the index (1-base) of the array matching the `pattern`.
+   * @template T
+   * @param {Array<T>} arr
+   * @param {pattern | (value: any, i: number, arr: Array<T>) => boolean} patternOrPredicate
+   * @param {pattern} [fromIndex := 1]
+   * @param {pattern} [times := 1]
+   * @return {number} - The index of searched array. If not found, returns `0`.
+   */
+  static search(arr, patternOrPredicate, fromIndex := 1, times := 1) {
+    if (fromIndex == 0) {
+      throw Error(bee.String.template("The fromIndex must be a non-zero number."))
+    }
+    query := bee.isPositive(fromIndex) ? bee.query(arr) : bee.query(arr).reverse()
+    predicate := bee.matcher(patternOrPredicate)
+
+    count := 1
+    for i, value in query {
+      if (predicate(value, i, arr)) {
+        if (count == times) {
+          return i
+        }
+        count++
+      }
+    }
+    return 0
+  }
+  /**
+   * Returns the index (1-base) of the array matching the `pattern`.
+   * @param {pattern | (value: any, i: number, arr: Array<T>) => boolean} patternOrPredicate
+   * @param {pattern} [fromIndex := 1]
+   * @param {pattern} [times := 1]
+   * @return {number} - The index of searched array. If not found, returns `0`.
+   */
+  search(params*) {
+    return bee.Array.search(this, params*)
+  }
+  /**
+   * Returns a new array containing the elements of the specified range.
+   * @template TElement
+   * @param {TElement[]} arr
+   * @param {Parameters<bee.RangeLiteral>} rangeLiteralParams*
+   * @return {TElement[]}
+   */
+  static slice(arr, rangeLiteralParams*) {
+    sliced := []
+    for i, current in bee.RangeLiteral(rangeLiteralParams*).toRange(arr.length) {
+      sliced.push(arr[current])
+    }
+    return sliced
+  }
+  /**
+   * Returns a new array containing the elements of the specified range.
+   * @param {TElement[]} arr
+   * @param {Parameters<bee.RangeLiteral>} rangeLiteralParams*
+   * @return {TElement[]}
+   */
+  slice(rangeLiteralParams*) {
+    return bee.Array.slice(this, rangeLiteralParams*)
+  }
+  /**
+   * Returns a new array sorted by stable merge sort.
+   * @template TElement
+   * @method
+   * @param {TElement[]} arr
+   * @param {(a, b) => number} comparer?
+   * @return {TElement[]}
+   */
+  class sort {
+    static call(arr, comparer := "") {
+      return this.mutable(arr.clone(), comparer)
+    }
+    class mutable {
+      static call(arr, comparer := "") {
+        comparer := comparer || (a, b) => bee.compare(a, b)
+        return this.haifdividing(arr, comparer)
+      }
+      static haifdividing(arr, comparer) {
+        dividingPoint := Ceil(arr.length / 2)
+        left := bee.Array.slice(arr, 1, dividingPoint)
+        right := bee.Array.slice(arr, dividingPoint + 1)
+        if (1 < dividingPoint) {
+          left := this.haifdividing(left, comparer)
+          right := this.haifdividing(right, comparer)
+        }
+        return this.merge(left, right, comparer)
+      }
+      static merge(left, right, comparer) {
+        hasFirstElement := bee.hasKey(1)
+
+        merged := []
+        while (0 < left.length || 0 < right.length) {
+          if (hasFirstElement(left) && !hasFirstElement(right)) {
+            merged.push(left.removeAt(1))
+            continue
+          }
+          if (!hasFirstElement(left) && hasFirstElement(right)) {
+            merged.push(right.removeAt(1))
+            continue
+          }
+          if (!hasFirstElement(left) && !hasFirstElement(right)) {
+            break
+          }
+
+          switch (bee.Number.clamp(comparer(left[1], right[1]), -1, 1)) {
+            case 0: merged.push(left.removeAt(1))
+            case 1: merged.push(right.removeAt(1))
+            case -1: merged.push(left.removeAt(1))
+          }
+        }
+        return merged
+      }
+    }
+    /**
+     * Returns a new array sorted by stable merge sort.
+     * @method
+     * @param {(a, b) => number} comparer?
+     * @return {bee.Array<TElement>}
+     */
+    sort(comparer) {
+      arr := bee.Array.sort(this, comparer)
+      return bee.Array(arr*)
+    }
+  }
+}

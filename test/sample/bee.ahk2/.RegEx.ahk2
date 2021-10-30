@@ -1,0 +1,433 @@
+class RegEx {
+  ;; @type {string[]}
+  static SPECIAL_CHARS => [ "\\", ".", "*", "?", "+", "[", "{", "(", ")", "^", "$" ]
+  /**
+   * @readonly
+   * @type {string<regex>}
+   */
+  value {
+    get {
+      if (0 < this.flags.length) {
+        return bee.Array.join(this.flags, "") ")" this.source
+      }
+      return this.source
+    }
+  }
+  ;; @type {string}
+  source := ""
+  ;; @type {string[]}
+  flags := []
+  /**
+   * @param {string} source
+   * @param {string | string[]} newFlags?
+   */
+  __New(source, newFlags := "") {
+    normalizedNewFlags := bee.isString(newFlags) ? StrSplit(newFlags, "") : newFlags
+
+    if (bee.PatternLiteral.isRegExPatternLiteral(source)) {
+      literal := bee.PatternLiteral(source)
+      this.source := literal.text
+      this.flags := bee.query(flags).concat(StrSplit(literal.flags, "")*).toValues()
+      return this
+    }
+
+    this.source := source
+    this.flags := normalizedNewFlags
+    RegExMatch(source, "^((?<flags>[imsxADJUXPOSC`n`r`a]*)\))?(?<source>.+)$", &match)
+    if (!match) {
+      return this
+    }
+    this.source := match.source
+    this.flags := newFlags ? normalizedNewFlags : StrSplit(match.flags, "")
+  }
+  /**
+   * Escapes all special characters in regular expressions.
+   * @param {string} regex
+   * @return {string}
+   */
+  static escape(regex) {
+    specialCharsRegex := "([" . bee.Array.join(bee.RegEx.SPECIAL_CHARS, "") . "])"
+    escaped := this.replaceAll(specialCharsRegex, regex, "\$1")
+    return escaped
+  }
+  /**
+   * Unescapes all special characters in regular expressions.
+   * @param {string} regex
+   * @return {string}
+   */
+  static unescape(regex) {
+    specialCharsRegex := "\\([" . bee.Array.join(bee.RegEx.SPECIAL_CHARS, "") . "])"
+    escaped := this.replaceAll(specialCharsRegex, regex, "$1")
+    return escaped
+  }
+  /**
+   * @param {bee.PatternLiteral} pattern
+   * @return {bee.RegEx}
+   */
+  static fromPattern(pattern) {
+    if (pattern.type == "regex") {
+      RegExMatch(pattern.text, bee.PatternLiteral.regexPatternRegEx, &match)
+      return bee.RegEx(match.pattern, match.flags)
+    }
+    if (pattern.type == "ignorecase") {
+      return bee.RegEx(pattern.text, [ "i" ])
+    }
+    return bee.RegEx(pattern.text)
+  }
+  /**
+   * Replaces a string with a regular expression.
+   * @param {string<regex>} regex
+   * @param {string} str
+   * @param {string | (match: RegExMatchInfo, pattern: string) => string} replacement - A string to replace or a callable object to output it
+   * @param {number} [limit := -1] - Limit the number of times to replace. `-1` indicates unlimited
+   * @return {string}
+   */
+  class replace extends bee.rule.PcreCalloutable {
+    static callout := ""
+    static call(regex, str, replacement, limit := -1) {
+      if (bee.isCallable(replacement)) {
+        regex := bee.RegEx(regex).addFlag("C").value
+        pcre_callout_bk := this.callout
+        context := { callout: replacement, result: str, limit: limit, count: 1 }
+        this.callout := ObjBindMethod(this, "pcre_callout", context)
+        RegExReplace(str, regex, , , limit)
+        this.callout := pcre_callout_bk
+        return context.result
+      }
+
+      return RegExReplace(str, regex, replacement, , limit)
+    }
+    static pcre_callout(context, match, calloutNumber, offset, str, pattern) {
+      if (-1 < context.limit && context.limit < context.count) {
+        return -1
+      }
+
+      str := context.result
+      pattern := bee.RegEx(pattern).removeFlag("C").value
+      callback := bee.callback(context.callout)
+
+      RegExMatch(context.result, pattern, &match, offset)
+      if (!match) {
+        return -1
+      }
+
+
+      extra := this.getCalloutExtraInfo()
+      replacement := callback(match, pattern, extra)
+
+      a := SubStr(str, 1, match.pos - 1)
+      b := SubStr(str, match.pos + StrLen(match[0]))
+      result := a . replacement . b
+
+      context.result := result
+      context.count++
+      return str == result ? 1 : 0
+    }
+  }
+  /**
+   * Replaces a string with a regular expression.
+   * @param {string} str
+   * @param {string | (match: RegExMatchInfo, pattern: string) => string} replacement - A string to replace or a callable object to output it
+   * @param {number} [limit := -1] - Limit the number of times to replace. `-1` indicates unlimited
+   * @return {string}
+   */
+  replace(str, replacement, limit := -1) {
+    return bee.RegEx.replace(this.value, str, replacement, limit)
+  }
+  /**
+   * Replaces all strings that match the regular expression.
+   * @param {string} regex
+   * @param {string} str
+   * @param {string | (match: RegExMatchInfo, pattern: string) => string} replacement - A string to replace or a callable object to output it
+   * @return {string}
+   */
+  static replaceAll(regex, str, replacement) {
+    return bee.RegEx.replace(regex, str, replacement)
+  }
+  /**
+   * Replaces all strings that match the regular expression.
+   * @param {string} str
+   * @param {string | (match: RegExMatchInfo, pattern: string) => string} replacement - A string to replace or a callable object to output it
+   * @return {string}
+   */
+  replaceAll(str, replacement) {
+    return bee.RegEx.replaceAll(this.value, str, replacement)
+  }
+  /**
+   * Replaces first strings that match the regular expression.
+   * @param {string} regex
+   * @param {string} str
+   * @param {string | (match: RegExMatchInfo, pattern: string) => string} replacement - A string to replace or a callable object to output it
+   * @return {string}
+   */
+  static replaceFirst(regex, str, replacement) {
+    return bee.RegEx.replace(regex, str, replacement, 1)
+  }
+  /**
+   * Replaces first strings that match the regular expression.
+   * @param {string} str
+   * @param {string | (match: RegExMatchInfo, pattern: string) => string} replacement - A string to replace or a callable object to output it
+   * @return {string}
+   */
+  replaceFirst(str, replacement) {
+    return bee.RegEx.replaceFirst(this.value, str, replacement)
+  }
+  /**
+   * Adds one or more flags.
+   * @param {string[]} flags*
+   * @chainable
+   */
+  addFlag(flags*) {
+    for i, flag in flags {
+      if (bee.any.equals(this.flags, flag)) {
+        continue
+      }
+      this.flags.push(flag)
+    }
+    return this
+  }
+  /**
+   * Matches `str` by regular expression.
+   * @param {string} regex
+   * @param {string} str
+   * @param {(match: RegExMatchInfo, regex: string) => number)} callout?
+   * Function to be called when a match is made.
+   * Depending on the return value, subsequent matches will be affected as follows.
+   * * If `0` or a `non-numeric value` is specified, it indicates the success of the current match and matching will continue
+   * * If a `number greater than or equal to 1` is specified, the current match will fail but matching will continue
+   * * If `-1` is specified, matching will be terminated immediately
+   * * If `less than -1` is specified, it indicates an error code and the matching will be terminated immediately
+   * @retrun {RegExMatchInfo}
+   */
+  /**
+   * Matches `str` by regular expression.
+   * @param {string} regex
+   * @param {string} str
+   * @param {number} fromIndex
+   * @param {(match: RegExMatchInfo, regex: string) => number)} callout?
+   * Function to be called when a match is made.
+   * Depending on the return value, subsequent matches will be affected as follows.
+   * * If `0` or a `non-numeric value` is specified, it indicates the success of the current match and matching will continue
+   * * If a `number greater than or equal to 1` is specified, the current match will fail but matching will continue
+   * * If `-1` is specified, matching will be terminated immediately
+   * * If `less than -1` is specified, it indicates an error code and the matching will be terminated immediately
+   * @retrun {RegExMatchInfo}
+   */
+  class match extends bee.rule.PcreCalloutable {
+    static call(regex, str, params*) {
+      fromIndex := 1
+      callout := ""
+      if (0 < params.length) {
+        if (bee.isCallable(params[1])) {
+          callout := params[1]
+        }
+        else {
+          fromIndex := params[1]
+          if (params.length == 2) {
+            callout := params[2]
+          }
+        }
+      }
+
+      if (bee.isCallable(callout)) {
+        regex := bee.RegEx(regex).addFlag("C").value
+        pcre_callout_bk := this.callout
+        this.callout := ObjBindMethod(this, "pcre_callout", bee.callback(callout))
+        RegExMatch(str, regex, &match, fromIndex)
+        this.callout := pcre_callout_bk
+        return match
+      }
+
+      RegExMatch(str, regex, &match, fromIndex)
+      return match
+    }
+    static pcre_callout(callback, match, calloutNumber, offset, str, regex) {
+      extra := this.getCalloutExtraInfo()
+      result := callback(match, regex, extra)
+      return result
+    }
+  }
+  /**
+   * Matches `str` by regular expression.
+   * @param {string} str
+   * @param {(match: RegExMatchInfo, regex: string) => number)} callout?
+   * Function to be called when a match is made.
+   * Depending on the return value, subsequent matches will be affected as follows.
+   * * If `0` or a `non-numeric value` is specified, it indicates the success of the current match and matching will continue
+   * * If a `number greater than or equal to 1` is specified, the current match will fail but matching will continue
+   * * If `-1` is specified, matching will be terminated immediately
+   * * If `less than -1` is specified, it indicates an error code and the matching will be terminated immediately
+   */
+  /**
+   * Matches `str` by regular expression.
+   * @param {string} str
+   * @param {number} fromIndex
+   * @param {(match: RegExMatchInfo, regex: string) => number)} callout?
+   * Function to be called when a match is made.
+   * Depending on the return value, subsequent matches will be affected as follows.
+   * * If `0` or a `non-numeric value` is specified, it indicates the success of the current match and matching will continue
+   * * If a `number greater than or equal to 1` is specified, the current match will fail but matching will continue
+   * * If `-1` is specified, matching will be terminated immediately
+   * * If `less than -1` is specified, it indicates an error code and the matching will be terminated immediately
+   * @retrun {RegExMatchInfo}
+   */
+  match(str, params*) {
+    return bee.RegEx.match(this.value, str, params*)
+  }
+  /**
+   * Returns an array of the results of all matching matches.
+   * @param {string} regex
+   * @param {string} str
+   * @param {(match: RegExMatchInfo, regex: string) => number)} callout?
+   * Function to be called when a match is made.
+   * Depending on the return value, subsequent matches will be affected as follows.
+   * * If `0` or a `non-numeric value` is specified, it indicates the success of the current match and matching will continue
+   * * If a `number greater than or equal to 1` is specified, the current match will fail but matching will continue
+   * * If `-1` is specified, matching will be terminated immediately
+   * * If `less than -1` is specified, it indicates an error code and the matching will be terminated immediately
+   * @retrun {RegExMatchInfo[]}
+   */
+  /**
+   * Returns an array of the results of all matching matches.
+   * @param {string} regex
+   * @param {string} str
+   * @param {string} fromIndex
+   * @param {(match: RegExMatchInfo, regex: string) => number)} callout?
+   * Function to be called when a match is made.
+   * Depending on the return value, subsequent matches will be affected as follows.
+   * * If `0` or a `non-numeric value` is specified, it indicates the success of the current match and matching will continue
+   * * If a `number greater than or equal to 1` is specified, the current match will fail but matching will continue
+   * * If `-1` is specified, matching will be terminated immediately
+   * * If `less than -1` is specified, it indicates an error code and the matching will be terminated immediately
+   * @retrun {RegExMatchInfo[]}
+   */
+  /**
+   * Returns an array of the results of all matching matches.
+   * @param {string} regex
+   * @param {string} str
+   * @param {string} fromIndex
+   * @param {string} limit
+   * @param {(match: RegExMatchInfo, regex: string) => number)} callout?
+   * Function to be called when a match is made.
+   * Depending on the return value, subsequent matches will be affected as follows.
+   * * If `0` or a `non-numeric value` is specified, it indicates the success of the current match and matching will continue
+   * * If a `number greater than or equal to 1` is specified, the current match will fail but matching will continue
+   * * If `-1` is specified, matching will be terminated immediately
+   * * If `less than -1` is specified, it indicates an error code and the matching will be terminated immediately
+   * @retrun {RegExMatchInfo[]}
+   */
+  static matchAll(regex, str, params*) {
+    fromIndex := 1
+    limit := -1
+    callout := ""
+    if (params.length == 1 && bee.isCallable(params[1])) {
+      callout := params[1]
+    }
+    else if (params.length == 1) {
+      fromIndex := params[1]
+    }
+    else if (params.length == 2 && bee.isCallable(params[2])) {
+      fromIndex := params[1]
+      callout := params[2]
+    }
+    else if (params.length == 2) {
+      fromIndex := params[1]
+      limit := params[2]
+    }
+    else if (params.length == 3) {
+      fromIndex := params[1]
+      limit := parms[2]
+      callout := params[3]
+    }
+
+    lastIndex := fromIndex
+    matches := []
+    while (limit == -1 || A_Index <= limit) {
+      match := bee.isCallable(callout) ? bee.RegEx.match(regex, str, lastIndex, callout) : bee.RegEx.match(regex, str, lastIndex)
+      if (!match) {
+        break
+      }
+      matches.push(match)
+      lastIndex := match.pos + match.len
+      if (lastIndex == match.pos) {
+        break
+      }
+    }
+    return matches
+  }
+  /**
+   * Returns an array of the results of all matching matches.
+   * @param {string} str
+   * @param {(match: RegExMatchInfo, regex: string) => number)} callout?
+   * Function to be called when a match is made.
+   * Depending on the return value, subsequent matches will be affected as follows.
+   * * If `0` or a `non-numeric value` is specified, it indicates the success of the current match and matching will continue
+   * * If a `number greater than or equal to 1` is specified, the current match will fail but matching will continue
+   * * If `-1` is specified, matching will be terminated immediately
+   * * If `less than -1` is specified, it indicates an error code and the matching will be terminated immediately
+   * @retrun {RegExMatchInfo[]}
+   */
+  /**
+   * Returns an array of the results of all matching matches.
+   * @param {string} str
+   * @param {number} limit
+   * @param {(match: RegExMatchInfo, regex: string) => number)} callout?
+   * Function to be called when a match is made.
+   * Depending on the return value, subsequent matches will be affected as follows.
+   * * If `0` or a `non-numeric value` is specified, it indicates the success of the current match and matching will continue
+   * * If a `number greater than or equal to 1` is specified, the current match will fail but matching will continue
+   * * If `-1` is specified, matching will be terminated immediately
+   * * If `less than -1` is specified, it indicates an error code and the matching will be terminated immediately
+   * @retrun {RegExMatchInfo[]}
+   */
+  matchAll(str, params*) {
+    return bee.RegEx.matchAll(this.value, str, params*)
+  }
+  /**
+   * Removes one or more flags.
+   * @param {string[]} flags*
+   * @chainable
+   */
+  removeFlag(flags*) {
+    this.flags := bee.query(this.flags).where((flag) => bee.none.equals(flags, flag)).toValues()
+    return this
+  }
+  /**
+   * Returns an array of strings delimited by strings that match the regular expression.
+   * @param {string} regex
+   * @param {string} str
+   * @param {string} [omitChars := " `n"]
+   * @param {string} [maxParts := -1]
+   * @return {string[]}
+   */
+  static split(regex, str, omitChars := " `t", maxParts := -1) {
+    splited := []
+
+    matches := this.matchAll(regex, str)
+    current := 1
+    target := str
+    for i, match in matches {
+      if (-1 < maxParts && maxParts < i) {
+        return splited
+      }
+      sliced := Trim(bee.String.slice(str, current, match.pos, true), omitChars)
+
+      splited.push(sliced)
+      current := match.pos + match.len
+    }
+    sliced := Trim(bee.String.slice(str, current), omitChars)
+    splited.push(sliced)
+
+    return splited
+  }
+  /**
+   * Returns an array of strings delimited by strings that match the regular expression.
+   * @param {string} str
+   * @param {string} [omitChars := " `n"]
+   * @param {string} [maxParts := -1]
+   * @return {string[]}
+   */
+  split(params*) {
+    return bee.RegEx.split(this.value, params*)
+  }
+}

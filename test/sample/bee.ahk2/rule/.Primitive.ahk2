@@ -1,0 +1,75 @@
+﻿class Primitive {
+  /**
+   * @readonly
+   * @type {primitive}
+   */
+  _value := ""
+  value => this._value
+  /**
+   * Gets the length.
+   * @readonly
+   * @type {number}
+   */
+  length => bee.rule.Primitive.length(this.value)
+  /**
+   * @praam {primitive} primitive
+   */
+  __New(primitive) {
+    if (IsObject(primitive)) {
+      throw TypeError("#1 Must be a primitive value.", -1)
+    }
+    this._value := primitive
+  }
+  /**
+   * **Note: This method has a side effect: once executed, it will continue to affect the script until it is terminated.**
+   * **Therefore, it should not be used in scripts that are used by many people, such as libraries.**
+   *
+   * Add own method to the primitive value as follows.
+   * ```ahk
+   * bee.String.extendNative()
+   * "abc".length ; => 3
+   * ```
+   */
+  static extendNative() {
+    Primitive.prototype.__Get := Get
+    ; for key in this.ownProps() {
+    ;   f := this.%key%
+    ;   if (f is Func && !bee.startsWith(key, "__")) {
+    ;     Primitive.prototype.%key% := ObjBindMethod(this, key)
+    ;   }
+    ; }
+    return
+
+    Get(str, key, *) {
+      if (key = "length") {
+        return StrLen(str)
+      }
+    }
+  }
+  /**
+   * Returns a new string after repeating `str` for the `count` of times.
+   * @param {string} str
+   * @param {number} count
+   */
+  static repeat(str, count) {
+    repeated := ""
+    Loop count {
+      repeated .= str
+    }
+    return repeated
+  }
+  /**
+   * Returns a new string after repeating for the `count` of times.
+   * @param {string} str
+   * @param {number} count
+   */
+  repeat(count) {
+    return bee.rule.Primitive.repeat(this.value, count)
+  }
+  /**
+   * Gets the length of the specified string.
+   * @param {string} str
+   * @return {number}
+   */
+  static length(str) => StrLen(str)
+}

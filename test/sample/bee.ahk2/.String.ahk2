@@ -1,0 +1,637 @@
+﻿class String extends bee.rule.Primitive {
+  /**
+   * Get the character at the specified `index`.
+   * @param {string} str
+   * @param {number} index
+   * @return {bee.String}
+   */
+  static charAt(str, index) {
+    return bee.String.substr(str, index, 1)
+  }
+  /**
+   * Get the character at the specified `index`.
+   * @param {string} str
+   * @param {number} index
+   * @return {bee.String}
+   */
+  charAt(index) {
+    char := bee.String.charAt(this.value, index)
+    return bee.String(char)
+  }
+  /**
+   * Concatenates all specified strings.
+   * @param {string} str
+   * @param {string[]} additionalStrings*
+   * @return {string}
+   */
+  static concat(str, additionalStrings*) {
+    return bee.Array.join(Array(str, additionalStrings*), "")
+  }
+  /**
+   * Concatenates all specified strings.
+   * @param {string[]} additionalStrings*
+   * @return {bee.String}
+   */
+  concat(additionalStrings*) {
+    concatenated := bee.String.concat(this.value, additionalStrings*)
+    return bee.String(concatenated)
+  }
+  /**
+   * Returns the number of times the specified `pattern` is matched.
+   * @param {string} str
+   * @param {string | bee.PatternLiteral} pattern
+   * @return {number}
+   */
+  static count(str, pattern) {
+    pattern := bee.PatternLiteral(pattern)
+    if (pattern.type == "regex") {
+      RegExReplace(str, bee.RegEx.fromPattern(pattern).value, "", &count)
+      return count
+    }
+    caseSensitive := pattern.type == "ignorecase" ? false : true
+    StrReplace(str, pattern.text, "", caseSensitive, &count)
+    return count
+  }
+  /**
+   * Returns the number of times the specified `pattern` is matched.
+   * @param {string | bee.PatternLiteral} pattern
+   * @return {number}
+   */
+  count(pattern) {
+    return bee.String.count(this.value, pattern)
+  }
+  /**
+   * Encloses the string with the specified `encloser`.
+   * @param {string} str
+   * @param {string} encloser
+   */
+  /**
+   * Encloses the string with the specified `prefix` and `suffix`.
+   * @param {string} str
+   * @param {string} prefix
+   * @param {string} suffix
+   */
+  static enclose(str, prefix, suffix := "") {
+    if (!suffix) {
+      suffix := prefix
+    }
+    return bee.String.concat(prefix, str, suffix)
+  }
+  /**
+   * Encloses the string with the specified `encloser`.
+   * @param {string} encloser
+   */
+  /**
+   * Encloses the string with the specified `prefix` and `suffix`.
+   * @param {string} prefix
+   * @param {string} suffix
+   */
+  enclose(prefix, suffix := "") {
+    enclosed := bee.String.enclose(this.value, prefix, suffix)
+    return bee.String(enclosed)
+  }
+  /**
+   * Synonymous with [Format](https://lexikos.github.io/v2/docs/commands/Format.htm).
+   * @param {string} str
+   * @param {string[]} variables*
+   * @return {string}
+   */
+  static format(str, variables*) {
+    return Format(str, variables*)
+  }
+  /**
+   * Synonymous with [Format](https://lexikos.github.io/v2/docs/commands/Format.htm).
+   * @param {string[]} variables*
+   * @return {string}
+   */
+  format(variables*) {
+    formatted := bee.String.format(this.value, variables*)
+    return bee.String(formatted)
+  }
+  /**
+   * Returns the index (1-base) of the text matching the `pattern`.
+   * @param {string} str
+   * @param {pattern} pattern
+   * @param {pattern} [times := 1]
+   * @return {number} - The index of searched text. If not found, returns `0`.
+   */
+  static indexOf(str, pattern, times := 1) {
+    return bee.String.search(str, pattern, 1, Abs(times))
+  }
+  /**
+   * Returns the index (1-base) of the text matching the `pattern`.
+   * @param {pattern} pattern
+   * @param {pattern} [times := 1]
+   * @return {number} - The index of searched text. If not found, returns `0`.
+   */
+  indexOf(pattern, times := 1) {
+    return bee.String.indexOf(this.value, pattern, times)
+  }
+  /**
+   * Searches text in the reverse direction and returns the index of the matching string.
+   * @param {pattern} str
+   * @param {pattern} pattern
+   * @param {pattern} [fromIndex := 1]
+   * @return {number} - The index of searched text. If not found, returns `0`.
+   */
+  static lastIndexOf(str, pattern, times := 1) {
+    pattern := bee.PatternLiteral(pattern)
+    if (pattern.type !== "regex") {
+      return bee.String.search(str, pattern, -1, Abs(times) * -1)
+    }
+
+    regex := bee.RegEx.fromPattern(pattern)
+    matches := regex.matchAll(str)
+    index := matches.length - (times - 1)
+    if (matches.length < index) {
+      return 0
+    }
+    return matches[index].pos
+  }
+  /**
+   * Searches text in the reverse direction and returns the index of the matching string.
+   * @param {pattern} pattern
+   * @param {pattern} [fromIndex := 1]
+   * @return {number} - The index of searched text. If not found, returns `0`.
+   */
+  lastIndexOf(pattern, times := 1) {
+    return bee.String.lastIndexOf(this.value, pattern, times)
+  }
+  /**
+   * Returns the result of regular expression matching.
+   * @param {string} str
+   * @param {pattern} pattern
+   * @param {(match: RegExMatchInfo, regex: string) => number)} callout?
+   * Function to be called when a match is made.
+   * Depending on the return value, subsequent matches will be affected as follows.
+   * * If `0` or a `non-numeric value` is specified, it indicates the success of the current match and matching will continue
+   * * If a `number greater than or equal to 1` is specified, the current match will fail but matching will continue
+   * * If `-1` is specified, matching will be terminated immediately
+   * * If `less than -1` is specified, it indicates an error code and the matching will be terminated immediately
+   * @retrun {RegExMatchInfo | ""}
+   */
+  /**
+   * Returns the result of regular expression matching.
+   * @param {string} str
+   * @param {pattern} pattern
+   * @param {number} fromIndex
+   * @param {(match: RegExMatchInfo, regex: string) => number)} callout?
+   * Function to be called when a match is made.
+   * Depending on the return value, subsequent matches will be affected as follows.
+   * * If `0` or a `non-numeric value` is specified, it indicates the success of the current match and matching will continue
+   * * If a `number greater than or equal to 1` is specified, the current match will fail but matching will continue
+   * * If `-1` is specified, matching will be terminated immediately
+   * * If `less than -1` is specified, it indicates an error code and the matching will be terminated immediately
+   * @retrun {RegExMatchInfo | ""}
+   */
+  static match(str, pattern, params*) {
+    pattern := bee.PatternLiteral(pattern)
+    if (pattern.type == "regex") {
+      regex := bee.RegEx.fromPattern(pattern)
+      return regex.match(str, params*)
+    }
+
+    regex := bee.RegEx(bee.RegEx.escape(pattern.text), pattern.type == "ignorecase" ? "i" : "")
+    return regex.match(str, params*)
+  }
+  /**
+   * Returns the result of regular expression matching.
+   * @param {string} str
+   * @param {pattern} pattern
+   * @param {(match: RegExMatchInfo, regex: string) => number)} callout?
+   * Function to be called when a match is made.
+   * Depending on the return value, subsequent matches will be affected as follows.
+   * * If `0` or a `non-numeric value` is specified, it indicates the success of the current match and matching will continue
+   * * If a `number greater than or equal to 1` is specified, the current match will fail but matching will continue
+   * * If `-1` is specified, matching will be terminated immediately
+   * * If `less than -1` is specified, it indicates an error code and the matching will be terminated immediately
+   * @retrun {RegExMatchInfo | ""}
+   */
+  /**
+   * Returns the result of regular expression matching.
+   * @param {string} str
+   * @param {pattern} pattern
+   * @param {number} fromIndex
+   * @param {(match: RegExMatchInfo, regex: string) => number)} callout?
+   * Function to be called when a match is made.
+   * Depending on the return value, subsequent matches will be affected as follows.
+   * * If `0` or a `non-numeric value` is specified, it indicates the success of the current match and matching will continue
+   * * If a `number greater than or equal to 1` is specified, the current match will fail but matching will continue
+   * * If `-1` is specified, matching will be terminated immediately
+   * * If `less than -1` is specified, it indicates an error code and the matching will be terminated immediately
+   * @retrun {RegExMatchInfo | ""}
+   */
+  match(pattern, params*) {
+    return bee.String.match(this.value, pattern, params*)
+  }
+  /**
+   * Returns an array of the results of all matching matches.
+   * @param {string} str
+   * @param {pattern} pattern
+   * @param {(match: RegExMatchInfo, regex: string) => number)} callout?
+   * Function to be called when a match is made.
+   * Depending on the return value, subsequent matches will be affected as follows.
+   * * If `0` or a `non-numeric value` is specified, it indicates the success of the current match and matching will continue
+   * * If a `number greater than or equal to 1` is specified, the current match will fail but matching will continue
+   * * If `-1` is specified, matching will be terminated immediately
+   * * If `less than -1` is specified, it indicates an error code and the matching will be terminated immediately
+   * @retrun {RegExMatchInfo[]}
+   */
+  /**
+   * Returns an array of the results of all matching matches.
+   * @param {string} str
+   * @param {pattern} pattern
+   * @param {number} [limit := -1]
+   * @param {(match: RegExMatchInfo, regex: string) => number)} callout?
+   * Function to be called when a match is made.
+   * Depending on the return value, subsequent matches will be affected as follows.
+   * * If `0` or a `non-numeric value` is specified, it indicates the success of the current match and matching will continue
+   * * If a `number greater than or equal to 1` is specified, the current match will fail but matching will continue
+   * * If `-1` is specified, matching will be terminated immediately
+   * * If `less than -1` is specified, it indicates an error code and the matching will be terminated immediately
+   * @retrun {RegExMatchInfo[]}
+   */
+  static matchAll(str, pattern, params*) {
+    pattern := bee.PatternLiteral(pattern)
+    if (pattern.type == "regex") {
+      regex := bee.RegEx.fromPattern(pattern)
+      return regex.matchAll(str, params*)
+    }
+
+    regex := bee.RegEx(bee.RegEx.escape(pattern.text), pattern.type == "ignorecase" ? "i" : "")
+    return regex.matchAll(str, params*)
+  }
+  /**
+   * Returns an array of the results of all matching matches.
+   * @param {pattern} pattern
+   * @param {(match: RegExMatchInfo, regex: string) => number)} callout?
+   * Function to be called when a match is made.
+   * Depending on the return value, subsequent matches will be affected as follows.
+   * * If `0` or a `non-numeric value` is specified, it indicates the success of the current match and matching will continue
+   * * If a `number greater than or equal to 1` is specified, the current match will fail but matching will continue
+   * * If `-1` is specified, matching will be terminated immediately
+   * * If `less than -1` is specified, it indicates an error code and the matching will be terminated immediately
+   * @retrun {RegExMatchInfo[]}
+   */
+  /**
+   * Returns an array of the results of all matching matches.
+   * @param {pattern} pattern
+   * @param {number} [limit := -1]
+   * @param {(match: RegExMatchInfo, regex: string) => number)} callout?
+   * Function to be called when a match is made.
+   * Depending on the return value, subsequent matches will be affected as follows.
+   * * If `0` or a `non-numeric value` is specified, it indicates the success of the current match and matching will continue
+   * * If a `number greater than or equal to 1` is specified, the current match will fail but matching will continue
+   * * If `-1` is specified, matching will be terminated immediately
+   * * If `less than -1` is specified, it indicates an error code and the matching will be terminated immediately
+   * @retrun {RegExMatchInfo[]}
+   */
+  matchAll(pattern, params*) {
+    return bee.String.matchAll(this.value, pattern, params*)
+  }
+  /**
+   * @param {string} str
+   * @param {string | { text: string, type: "text" } | { text: string, type: "ignorecase" }} str
+   * @param {string | (pattern: string, offset: number, str: string) => string} replacement - A string to replace or a callable object to output it
+   * @param {number} [limit := -1]
+   * @return {string}
+   */
+  /**
+   * @param {string} str
+   * @param {string<regex> | { text: string, type: "regex" }} pattern
+   * @param {string | (match: RegExMatchInfo, pattern: string) => string} replacement - A string to replace or a callable object to output it
+   * @param {number} [limit := -1]
+   * @return {string}
+   */
+  static replace(str, pattern, replacement, limit := -1) {
+    pattern := bee.PatternLiteral(pattern)
+    if (pattern.type == "regex") {
+      return bee.RegEx.fromPattern(pattern).replace(str, replacement, limit)
+    }
+
+    caseSensitive := pattern.type == "ignorecase" ? false : true
+    if (!bee.isCallable(replacement)) {
+      return StrReplace(str, pattern.text, replacement, caseSensitive, , limit)
+    }
+
+    replaced := str
+    callback := bee.callback(replacement)
+    count := 1
+    while (true) {
+      if (-1 < limit && limit < count) {
+        break
+      }
+      offset := InStr(replaced, pattern.text, caseSensitive)
+      if (offset == 0) {
+        break
+      }
+      replacement := callback(pattern.text, offset, replaced)
+      replaced := StrReplace(replaced, pattern.text, replacement, caseSensitive, , 1)
+      count++
+    }
+    return replaced
+  }
+  /**
+   * @param {string | { text: string, type: "text" } | { text: string, type: "ignorecase" }} str
+   * @param {string | (pattern: string, offset: number, str: string) => string} replacement - A string to replace or a callable object to output it
+   * @param {number} [limit := -1]
+   * @return {string}
+   */
+  /**
+   * @param {string<regex> | { text: string, type: "regex" }} pattern
+   * @param {string | (match: RegExMatchInfo, pattern: string) => string} replacement - A string to replace or a callable object to output it
+   * @param {number} [limit := -1]
+   * @return {string}
+   */
+  replace(pattern, replacement, limit := -1) {
+    replaced := bee.String.replace(this.value, pattern, replacement, limit)
+    return bee.String(replaced)
+  }
+  /**
+   * @param {string} str
+   * @param {string | { text: string, type: "text" } | { text: string, type: "ignorecase" }} str
+   * @param {string | (pattern: string, offset: number, str: string) => string} replacement - A string to replace or a callable object to output it
+   * @return {string}
+   */
+  /**
+   * @param {string} str
+   * @param {string<regex> | { text: string, type: "regex" }} pattern
+   * @param {string | (match: RegExMatchInfo, pattern: string) => string} replacement - A string to replace or a callable object to output it
+   * @return {string}
+   */
+  static replaceAll(str, pattern, replacement) {
+    return bee.String.replace(str, pattern, replacement, -1)
+  }
+  /**
+   * @param {string | { text: string, type: "text" } | { text: string, type: "ignorecase" }} str
+   * @param {string | (pattern: string, offset: number, str: string) => string} replacement - A string to replace or a callable object to output it
+   * @return {string}
+   */
+  /**
+   * @param {string<regex> | { text: string, type: "regex" }} pattern
+   * @param {string | (match: RegExMatchInfo, pattern: string) => string} replacement - A string to replace or a callable object to output it
+   * @return {string}
+   */
+  replaceAll(pattern, replacement) {
+    replaced := bee.String.replaceAll(this.value, pattern, replacement)
+    return bee.String(replaced)
+  }
+  /**
+   * @param {string} str
+   * @param {string | { text: string, type: "text" } | { text: string, type: "ignorecase" }} str
+   * @param {string | (pattern: string, offset: number, str: string) => string} replacement - A string to replace or a callable object to output it
+   * @return {string}
+   */
+  /**
+   * @param {string} str
+   * @param {string<regex> | { text: string, type: "regex" }} pattern
+   * @param {string | (match: RegExMatchInfo, pattern: string) => string} replacement - A string to replace or a callable object to output it
+   * @return {string}
+   */
+  static replaceFirst(str, pattern, replacement) {
+    return bee.String.replace(str, pattern, replacement, 1)
+  }
+  /**
+   * @param {string | { text: string, type: "text" } | { text: string, type: "ignorecase" }} str
+   * @param {string | (pattern: string, offset: number, str: string) => string} replacement - A string to replace or a callable object to output it
+   * @return {string}
+   */
+  /**
+   * @param {string<regex> | { text: string, type: "regex" }} pattern
+   * @param {string | (match: RegExMatchInfo, pattern: string) => string} replacement - A string to replace or a callable object to output it
+   * @return {string}
+   */
+  replaceFirst(pattern, replacement) {
+    replaced := bee.String.replaceFirst(this.value, pattern, replacement)
+    return bee.String(replaced)
+  }
+  /**
+   * Returns the index (1-base) of the text matching the `pattern`.
+   * @param {string} str
+   * @param {pattern} pattern
+   * @param {pattern} [fromIndex := 1]
+   * @param {pattern} [times := 1]
+   * @return {number} - The index of searched text. If not found, returns `0`.
+   */
+  static search(str, pattern, params*) {
+    pattern := bee.PatternLiteral(pattern)
+    if (pattern.type == "regex") {
+      regex := bee.RegEx.fromPattern(pattern)
+      if (params.length < 2 || params[1] == 1) {
+        match := regex.match(str, params*)
+        if (!match) {
+          return 0
+        }
+        return match.pos
+      }
+
+      times := Abs(params[2])
+      matches := regex.matchAll(str, params*)
+      if (!matches || matches.length < times) {
+        return 0
+      }
+      return matches[times].pos
+    }
+
+    caseSensitive := pattern.type == "ignorecase" ? false : true
+    return InStr(str, pattern.text, caseSensitive, params*)
+  }
+  /**
+   * Returns the index (1-base) of the text matching the `pattern`.
+   * @param {pattern} pattern
+   * @param {number} [times := 1]
+   * @return {number} - The index of searched text. If not found, returns `0`.
+   */
+  search(pattern, params*) {
+    return bee.String.search(this.value, pattern, params*)
+  }
+  /**
+   * Returns a new string with the specified range of the string sliced.
+   * @param {string} str
+   * @param {Parameters<bee.RangeLiteral>} rangeLiteralParams
+   * @return {string}
+   */
+  static slice(str, rangeLiteralParams*) {
+    range := bee.RangeLiteral(rangeLiteralParams*)
+    str_len := this.length(str)
+    start := range.start.reverse ? str_len - (range.start.index - 1) : range.start.index
+    end := (range.end.reverse ? str_len - (range.end.index - 1) : range.end.index) - range.excludeEnd
+
+    sliced := SubStr(str, start, end - (start - 1))
+    return sliced
+  }
+  /**
+   * Returns a new string with the specified range of the string sliced.
+   * @param {Parameters<bee.RangeLiteral>} rangeLiteralParams
+   * @return {string}
+   */
+  slice(rangeLiteralParams*) {
+    sliced := bee.String.slice(this.value, rangeLiteralParams*)
+    return bee.String(sliced)
+  }
+  /**
+   * Returns an array of strings that have been split using `delimiter`.
+   * @param {string} str
+   * @param {pattern | string[]} delimiter
+   * @param {string} [omitChars := " `t"]
+   * @param {number} [maxParts := -1]
+   * @return {string[]}
+   */
+  static split(str, delimiter, omitChars := " `t", maxParts := -1) {
+    if (bee.all.isString(delimiter)) {
+      return StrSplit(str, delimiter, omitChars, maxParts)
+    }
+
+    pattern := bee.PatternLiteral(delimiter)
+    if (pattern.type == "regex") {
+      regex := bee.RegEx.fromPattern(pattern)
+      return regex.split(str, omitChars, maxParts)
+    }
+    if (pattern.type == "text") {
+      return StrSplit(str, pattern.text, omitChars, maxParts)
+    }
+    regex := bee.RegEx(bee.RegEx.escape(pattern.text), "i")
+    return regex.split(str, omitChars, maxParts)
+  }
+  /**
+   * Returns an array of strings that have been split using `delimiter`.
+   * @param {pattern | string[]} delimiter
+   * @param {string} [omitChars := " `t"]
+   * @param {number} [maxParts := -1]
+   * @return {string[]}
+   */
+  split(params*) {
+    return bee.String.split(this.value, params*)
+  }
+  /**
+   * Synonymous with [SubStr](https://lexikos.github.io/v2/docs/commands/SubStr.htm).
+   * @param {string} str
+   * @param {number} fromIndex
+   * @param {number} length?
+   * @return {bee.String}
+   */
+  static substr(str, params*) {
+    return SubStr(str, params*)
+  }
+  /**
+   * Synonymous with [SubStr](https://lexikos.github.io/v2/docs/commands/SubStr.htm).
+   * @param {number} fromIndex
+   * @param {number} length?
+   * @return {string}
+   */
+  substr(params*) {
+    str := bee.String.substr(this.value, params*)
+    return bee.String(str)
+  }
+  /**
+   * Embeds the value of a variable in a string.
+   *
+   * You can determine the value to embed in the format `${key_or_index}` as shown in the following example.
+   * ```ahk2
+   * bee.String.template("${key}", { key: "value" }) ; => "value"
+   * ```
+   *
+   * If you want to get nested properties, connect them with dots.
+   * ```ahk2
+   * bee.String.template("${key.nest}", { key: { nest: "value" } }) ; => "value"
+   * ```
+   *
+   * If you pass an array to `variable`, specify a index.
+   * ```ahk2
+   * bee.String.template("${1}, ${2.nest}", [ "value", { nest: "value2" }]) ;=> "value, value2"
+   * ```
+   *
+   * If you omit the index, the index will be incremented by the number of repetitions.
+   * ```ahk2
+   * bee.String.template("${}, ${}, ${}", [ 1, 2, 3 ]) ;=> "1, 2, 3"
+   * ```
+   *
+   * If you do not want to embed the value, prefix the `$` with `\`.
+   * ```ahk2
+   * bee.String.template("\${1}, ${1}", "value") ;=> "${1}, value"
+   * ```
+   *
+   * If you pass `variable` followed by an argument, it will have the same meaning as if you had passed an array.
+   * In other words, the following will be the same.
+   * ```ahk
+   * bee.String.template("${}, ${}, ${}", [ "a", "b", "c" ]) ;=> "a, b, c"
+   * bee.String.template("\${1}, ${1}", "a", "b", "c") ;=> "a, b, c"
+   * ```
+   * @param {string} str
+   * @param {any} variable
+   * @param {any[]} variables*
+   * @return {string}
+   */
+  static template(str, variables*) {
+    source := variables.length == 1 ? variables[1] : variables
+    if (bee.isPrimitive(source)) {
+      source := [ source ]
+    }
+
+    formatted := bee.String.replaceAll(str, "/(?<!\\)\$\{(?<key>[^\s\{\}]*)?\}/i", Template.bind({ source: source, count: 1 }))
+    formatted := bee.String.replaceAll(formatted, "/\\(\$\{[^\s\{\}]*\})/i", "$1")
+    return formatted
+
+    Template(context, match, str, *) {
+      if (bee.toNumber(match.key) == 0) {
+        value := context.source
+      }
+      else {
+        keys := StrSplit(match.key ? match.key : context.count, ".")
+        if (bee.hasNestedKey(context.source, keys*)) {
+          value := bee.getNestedProp(context.source, keys*)
+        }
+      }
+      context.count++
+      if (!IsSet(value)) {
+        return match[0]
+      }
+      if (bee.isPrimitive(value)) {
+        return value
+      }
+      return bee.Json.stringify(value, { space: true })
+    }
+  }
+  /**
+   * Embeds the value of a variable in a string.
+   *
+   * You can determine the value to embed in the format `${key_or_index}` as shown in the following example.
+   * ```ahk2
+   * bee.String.template("${key}", { key: "value" }) ; => "value"
+   * ```
+   *
+   * If you want to get nested properties, connect them with dots.
+   * ```ahk2
+   * bee.String.template("${key.nest}", { key: { nest: "value" } }) ; => "value"
+   * ```
+   *
+   * If you pass an array to `variable`, specify a index.
+   * ```ahk2
+   * bee.String.template("${1}, ${2.nest}", [ "value", { nest: "value2" }]) ;=> "value, value2"
+   * ```
+   *
+   * If you omit the index, the index will be incremented by the number of repetitions.
+   * ```ahk2
+   * bee.String.template("${}, ${}, ${}", [ 1, 2, 3 ]) ;=> "1, 2, 3"
+   * ```
+   *
+   * If you do not want to embed the value, prefix the `$` with `\`.
+   * ```ahk2
+   * bee.String.template("\${1}, ${1}", "value") ;=> "${1}, value"
+   * ```
+   *
+   * If you pass `variable` followed by an argument, it will have the same meaning as if you had passed an array.
+   * In other words, the following will be the same.
+   * ```ahk
+   * bee.String.template("${}, ${}, ${}", [ "a", "b", "c" ]) ;=> "a, b, c"
+   * bee.String.template("\${1}, ${1}", "a", "b", "c") ;=> "a, b, c"
+   * ```
+   * @param {any} variable
+   * @param {any[]} variables*
+   * @return {bee.String}
+   */
+  template(variables*) {
+    templated := bee.String.template(this.value, variables*)
+    return bee.String(templated)
+  }
+}

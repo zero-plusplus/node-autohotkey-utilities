@@ -1,0 +1,235 @@
+﻿class Hotkey {
+  /**
+   * @typedef {(hotkey: bee.Hotkey) => void} HotkeyAction
+   */
+  /**
+   * @typedef {(context) => void} HotkeyCondition
+   */
+  ;; @type {string[]}
+  static options := [ "*", "~", "$" ]
+  ;; @type {Array<[ string, string]>}
+  static symbolToKeyNameMap := bee.OrderedMap(
+    ">>#",  "RWin",
+    "<#",   "LWin",
+    "#",    "Win",
+    ">>!",  "RAlt",
+    "<!",   "LAlt",
+    "!",    "Alt",
+    "<^>!", "AltGr",
+    ">>^",  "RCtrl",
+    "<^",   "LCtrl",
+    "^",    "Ctrl",
+    ">>+",  "RShift",
+    "<+",   "LShift",
+    "+",    "Shift",
+  )
+  ;; @type {string}
+  _value := ""
+  value => this._value
+  ;; @type {HotkeyAction}
+  action := ""
+  ;; @type {HotkeyCondition?}
+  condition := ""
+  ;; @type {boolean}
+  isCombination := false
+  ;; @type {string[]}
+  flags := false
+  ;; @type {string[]}
+  modifiers := ""
+  ;; @type {string}
+  key := ""
+  ;; @type {boolean}
+  up := false
+  /**
+   * @param {string} keyName
+   * @param {HotkeyAction} action
+   * @param {HotkeyCondition} condition
+   */
+  __New(keyName, action := "", condition := "") {
+    this._value := keyName
+    this.action := bee.callback(action ? action : bee.noop, 1).bind(this)
+    this.condition := bee.callback(condition ? condition : (*) => true, 1).bind(this)
+
+    parsed := bee.Hotkey.parse(keyName)
+    this.isCombination := parsed.isCombination
+    this.flags := parsed.flags
+    this.modifiers := parsed.modifiers
+    this.key := parsed.key
+    this.up := parsed.up
+  }
+  /**
+   * Parses the format of a hotkey.
+   * @param {string} source
+   * @return {{ isCombination: boolean; flags: string[]; modifiers: []; key: string; up: boolean }}
+   */
+  class parse {
+    static call(source) {
+      context := {
+        source: source,
+        current: 1,
+        isCombination: bee.matchPattern(source, "/\s+&\s+/")
+      }
+
+      return {
+        isCombination: context.isCombination,
+        flags: bee.Array.sort.mutable(this.parseFlags(context)),
+        modifiers: bee.Array.sort.mutable(this.parseModifiers(context)),
+        key: this.parseKey(context),
+        up: this.parseUp(context),
+      }
+    }
+    static parseFlags(context) {
+      options := []
+      if (context.isCombination) {
+        return options
+      }
+
+      while (true) {
+        char := bee.String.substr(context.source, context.current, 1)
+        if (bee.none.equals(bee.Hotkey.options, char)) {
+          break
+        }
+        for i, option in bee.Hotkey.options {
+          if (char == option) {
+            context.current++
+            options.push(char)
+            break
+          }
+        }
+
+      }
+      return options
+    }
+    static parseModifiers(context) {
+      modifiers := []
+
+      if (context.isCombination) {
+        modifier := bee.String.replace(context.source, "/\s+&.+$/", "")
+        modifiers.push(modifier)
+        return modifiers
+      }
+
+      symbols := bee.query(bee.Hotkey.symbolToKeyNameMap).toKeys()
+      while (true) {
+        target := bee.String.substr(context.source, context.current)
+        pattern := "/^(" bee.RegEx.escape(bee.Array.join(symbols, "|")) ")/"
+        if (!target || !bee.matchPattern(target, pattern)) {
+          break
+        }
+
+        for symbol, keyName in bee.Hotkey.symbolToKeyNameMap {
+          match := bee.String.match(target, "/^(" bee.RegEx.escape(symbol) ")/")
+          if (match) {
+            modifiers.push(keyName)
+            context.current += match.len
+            break
+          }
+        }
+      }
+      return modifiers
+    }
+    static parseKey(context) {
+      key := context.isCombination ? bee.String.replace(context.source, "/^.+&\s+/", "") : SubStr(context.source, context.current)
+      return bee.String.replace(key, "/\s+up$/i", "")
+    }
+    static parseUp(context) {
+      return bee.matchPattern(context.source, "/\s+up$/i")
+    }
+  }
+  /**
+   * @param {string} source
+   * @return {string}
+   */
+  static normalize(source) {
+    parsed := this.parse(source)
+
+    normalized := ""
+    normalized .= bee.Array.join(parsed.flags, "")
+    normalized .= bee.Array.join(bee.query(parsed.modifiers).select(() => bee.query(this.symbolToKeyNameMap)), "")
+    normalized .= parsed.isCombination ? " & " : ""
+    normalized .= parsed.key
+    normalized .= parsed.up ? " Up" : ""
+    return normalized
+  }
+  /**
+   * Register a hotkey. The registered hotkeys will be activated immediately.
+   * @chainable
+   */
+  register() {
+    HotIf(this.condition)
+    Hotkey(this.value, this.action)
+    HotIf()
+
+    return this
+  }
+  /**
+   * Enables hotkey.
+   * @chainable
+   */
+  enable() {
+    HotIf(this.condition)
+    Hotkey(this.value, "On")
+    HotIf()
+
+    return this
+  }
+  /**
+   * Disables hotkey.
+   * @chainable
+   */
+  disable() {
+    HotIf(this.condition)
+    Hotkey(this.value, "Off")
+    HotIf()
+
+    return this
+  }
+  /**
+   * Enables/disables hotkey buffering.
+   * @param {boolean} [enable := true]
+   * @chainable
+   */
+  enableBuffer(enable := true) {
+    HotIf(this.condition)
+    Hotkey(this.value, enable ? "B" : "B0")
+    HotIf()
+
+    return this
+  }
+  /**
+   * Sets the Input level of the hotkey.
+   * @param {number} level
+   * @chainable
+   */
+  setInputLevel(level) {
+    HotIf(this.condition)
+    Hotkey(this.value, "I" level)
+    HotIf()
+
+    return this
+  }
+  /**
+   * Sets the priority of hotkey.
+   * @param {number} priority
+   * @chainable
+   */
+  setPriority(priority) {
+    HotIf(this.condition)
+    Hotkey(this.value, "P" priority)
+    HotIf()
+
+    return this
+  }
+  /**
+   * Sets the maximum number of hotkey threads.
+   * @param {number} number
+   * @chainable
+   */
+  setMaxThreads(number) {
+    HotIf(this.condition)
+    Hotkey(this.value, "T" number)
+    HotIf()
+
+    return this
+  }
+}

@@ -1,0 +1,580 @@
+class Enumerable {
+  ;; @type {object}
+  source := ""
+  /**
+   * @template KEY, VALUE
+   * @param {primitive | object<KEY, VALUE>} source - If a primitive value is specified, it will be wrapped in an array.
+   * @return {bee.Enumerable<object<KEY, VALUE>}
+   */
+  __New(source) {
+    this.source := bee.isPrimitive(source) ? [ source ] : source
+  }
+  __Enum(*) {
+    return this.toEnumeratorLike()
+  }
+; #region Building
+  /**
+   * Converts a string to a bee.Enumerable that enumerates each character.
+   * @method
+   * @return {bee.Enumerable<object<number, string>}
+   */
+  class chars extends bee.rule.EnumerableFunc {
+    __New(source) {
+      this.source := bee.isString(source) ? source : ""
+    }
+    _init() {
+      this.current := 1
+    }
+    _next(&key, &value := unset) {
+      if (StrLen(this.source) < this.current) {
+        return false
+      }
+
+      key := this.current
+      value := SubStr(this.source, this.current, 1)
+      this.current++
+      return true
+    }
+  }
+  /**
+   * Builds a `bee.Enumerable` that enumerates the specified range.
+   * @method
+   * @param {Parameters<bee.RangeLiteral.__New>} rangeLiteralParams*
+   * @return {bee.Enumerable<object<number, number>}
+   */
+  class range extends bee.rule.EnumerableFunc {
+    __New(params*) {
+      this.range := bee.RangeLiteral(params*)
+    }
+    _init() {
+      this.increment := 1
+      this.current := 1
+      this.start := this.range.start.index
+      this.end := (this.range.end.index - (this.start - 1)) - this.range.excludeEnd
+      this.step := this.range.step
+      this.unicodeMode := this.range.unicodeMode
+    }
+    _next(&key, &value) {
+      if (this.end < this.current) {
+        return false
+      }
+      key := this.increment
+
+      _value := this.start + (this.current - 1)
+      value := this.unicodeMode ? Chr(_value) : _value
+
+      this.increment++
+      this.current += this.step
+      return true
+    }
+  }
+; #endregion Building
+; #region Projection
+  /**
+   * Concatenate the current sequence with one or more additional sequences.
+   * @template KEY, VALUE
+   * @param {object<KEY, VALUE>} source
+   * @param {Array<object<KEY, VALUE>>} additionalSources*
+   * @return {bee.Enumerable<object<KEY, VALUE>>}
+   */
+  class concat extends bee.rule.EnumerableFunc {
+    _init() {
+      this.current := 1
+      this.additionalSources := this.args
+      this.additonalSequence := bee.Enumerable.toEnumeratorLike(this.additionalSources[this.current])
+    }
+    _next(&key, &value := unset) {
+      if (this.enumerator.call(&key, &value)) {
+        return true
+      }
+      if (this.additonalSequence.call(&key, &value)) {
+        return true
+      }
+
+      this.current++
+      if (!bee.hasKey(this.additionalSources, this.current)) {
+        return false
+      }
+
+      this.additonalSequence := bee.Enumerable.toEnumeratorLike(this.additionalSources[this.current])
+      return this._next(&key, &value)
+    }
+  }
+  /**
+   * Concatenate the current sequence with one or more additional sequences.
+   * @param {Array<object<KEY, VALUE>>} additionalSources*
+   * @return {bee.Enumerable<object<KEY, VALUE>>}
+   */
+  concat(additionalSources*) {
+    return bee.Enumerable.concat(this, additionalSources*)
+  }
+  /**
+   * Sets a default fields for the `data`.
+   * @template KEY, VALUE
+   * @method
+   * @param {object<KEY, VALUE>} source
+   * @param {object<KEY, VALUE>[]} defaultSources*
+   * @return {bee.Enumerable<KEY, VALUE>}
+   */
+  class defaults extends bee.rule.EnumerableFunc {
+    _init() {
+      this.defaultSources := this.args
+      this.current := this.defaultSources.length
+      this.defaultSourceEnumerator := bee.Enumerable.toEnumeratorLike(bee.tryGetProp(this.defaultSources, this.current, {}))
+      this.keys := []
+    }
+    _next(&key, &value := unset) {
+      hasNext := this.enumerator.call(&_key, &_value)
+      if (hasNext) {
+        key := _key
+        value := _value
+        this.keys.push(key)
+        return true
+      }
+
+      while (this.defaultSourceEnumerator.call(&_key, &_value)) {
+        if (bee.any.equals(this.keys, _key)) {
+          continue
+        }
+
+        key := _key
+        value := _value
+        this.keys.push(key)
+        return true
+      }
+      this.current--
+
+      if (!bee.hasKey(this.defaultSources, this.current)) {
+        return false
+      }
+      this.defaultSourceEnumerator := bee.Enumerable.toEnumeratorLike(this.defaultSources[this.current])
+      return this._next(&key, &value)
+    }
+  }
+  /**
+   * Sets a default fields for the `data`.
+   * @method
+   * @param {object<KEY, VALUE>[]} defaultSources*
+   * @return {bee.Enumerable<KEY, VALUE>}
+   */
+  defaults(defaultSources*) {
+    return bee.Enumerable.defaults(this, defaultSources*)
+  }
+  /**
+   * Replace the value with the value returned by the specified `selector`.
+   * @template KEY, VALUE, TRemapValue
+   * @param {object<KEY, VALUE>} source
+   * @param {() => TRemapValue} selector
+   * @return {bee.Enumerable<KEY, TRemapValue>}
+   */
+  class select extends bee.rule.EnumerableFunc {
+    _init() {
+      this.selector := bee.callback(this.args[1])
+    }
+    _next(&key, &value) {
+      if (!this.enumerator.call(&_key, &_value)){
+        return false
+      }
+      key := _key
+      value := this.selector.call(_value, _key)
+      return true
+    }
+  }
+  /**
+   * Replace the value with the value returned by the specified `selector`.
+   * @param {() => TRemapValue} selector
+   * @return {bee.Enumerable<KEY, TRemapValue>}
+   */
+  select(selector) {
+    return bee.Enumerable.select(this, selector)
+  }
+; #endregion Projection
+; #region Filtering
+  /**
+   * Returns all elements for which the `predicate` returns `true`.
+   * @method
+   * @param {any} value
+   * @param {(value, key, enumerable) => boolean} predicate
+   */
+  class where extends bee.rule.EnumerableFunc {
+    _init() {
+      this.predicate := bee.callback(this.args[1])
+    }
+    _next(&key, &value) {
+      while (this.enumerator.call(&_key, &_value)) {
+        if (this.predicate.call(_value, _key)) {
+          key := _key
+          value := _value
+          return true
+        }
+      }
+      return false
+    }
+  }
+  /**
+   * Returns all elements for which the `predicate` returns `true`.
+   * @param {(value, key) => boolean} predicate
+   * @return {bee.Enumerable<KEY, VALUE}
+   */
+  where(predicate) {
+    return bee.Enumerable.where(this, predicate)
+  }
+; #endregion Filtering
+; #region Ordering
+  /**
+   * Sorts the elements of a sequence in ascending or descending order according to their keys.
+   * @method
+   * @param {object<KEY, VALUE>} source
+   * @param {boolean} [descending := false]
+   * @return {bee.Enumerable<KEY, VALUE>}
+   */
+  /**
+   * Sorts the elements of a sequence in ascending or descending order according to their keys.
+   * @method
+   * @param {object<KEY, VALUE>} source
+   * @param {(value, key) => any} selector - Callback that returns the value of the field being compared
+   * @param {boolean} [descending := false]
+   * @return {bee.Enumerable<KEY, VALUE>}
+   */
+  /**
+   * Sorts the elements of a sequence using the compare function.
+   * @method
+   * @param {object<KEY, VALUE>} source
+   * @param {(value, key) => any} selector - Callback that returns the value of the field being compared
+   * @param {(a, b) => number} comparer?
+   * @return {bee.Enumerable<KEY, VALUE>}
+   */
+  class orderBy extends bee.rule.EnumerableFunc {
+    __New(source, selector := "", comparer := "") {
+      static defaultComparer := (value) => value
+
+      super.__New(source)
+      if (bee.isBoolean(selector) && !comparer) {
+        descending := selector
+        selector := defaultComparer
+        comparer := (a, b) => bee.compare(a, b, descending)
+      }
+      else if (selector && bee.isBoolean(comparer)) {
+        descending := comparer
+        selector := selector
+        comparer := (a, b) => bee.compare(a, b, descending)
+      }
+      selector := bee.callback(selector || defaultComparer)
+      this.comparer := bee.callback(bee.callable(comparer)
+        ? (pair_a, pair_b) => comparer(selector(pair_a[2], pair_a[1]), selector(pair_b[2], pair_b[1]))
+        : (pair_a, pair_b) => bee.compare(selector(pair_a[2], pair_a[1]), selector(pair_b[2], pair_b[1]), bee.toBoolean(comparer)))
+    }
+    _init() {
+      this.map := bee.Enumerable.toMap(this.source)
+      this.sorted := bee.Array.sort(bee.Enumerable.toEntries(this.source), (a, b) => this.comparer.call(a, b))
+      this.keysEnumerator := bee.Enumerable.select(this.sorted, (key) => key).toEnumeratorLike()
+    }
+    _next(&key, &value) {
+      if (!this.keysEnumerator.call(&index, &entry)) {
+        return false
+      }
+      key := entry[1]
+      value := entry[2]
+      return true
+    }
+    /**
+     * Set additional conditions for sorting.
+     * @param {boolean} [descending := false]
+     * @return {bee.Enumerable<KEY, VALUE>}
+     */
+    /**
+     * Set additional conditions for sorting.
+     * @method
+     * @param {(value, key) => any} selector - Callback that returns the value of the field being compared
+     * @param {boolean} [descending := false]
+     * @return {bee.Enumerable<KEY, VALUE>}
+     */
+    /**
+     * Set additional conditions for sorting.
+     * @method
+     * @param {(value, key) => any} selector - Callback that returns the value of the field being compared
+     * @param {(a, b) => number} comparer?
+     * @return {bee.Enumerable<KEY, VALUE>}
+     */
+    thenBy(selector := "", comparer := "") {
+      selector := bee.callback(selector || (value) => value)
+      parentComparer := this.comparer
+      childComparer := bee.callback(bee.isCallable(comparer)
+        ? (pair_a, pair_b) => comparer(selector(pair_a[2], pair_a[1]), selector(pair_b[2], pair_b[1]))
+        : (pair_a, pair_b) => bee.compare(selector(pair_a[2], pair_a[1]), selector(pair_b[2], pair_b[1]), bee.toBoolean(comparer)))
+      this.comparer := Compare
+      return this
+
+      Compare(a, b) {
+        comparison := parentComparer(a, b)
+        if (comparison == 0) {
+          comparison := childComparer(a, b)
+        }
+        return comparison
+      }
+    }
+  }
+  /**
+   * Sorts the elements of a sequence in ascending or descending order according to their keys.
+   * @method
+   * @param {boolean} [descending := false]
+   * @return {bee.Enumerable<KEY, VALUE>}
+   */
+  /**
+   * Sorts the elements of a sequence in ascending or descending order according to their keys.
+   * @method
+   * @param {(value, key) => any} selector - Callback that returns the value of the field being compared
+   * @param {boolean} [descending := false]
+   * @return {bee.Enumerable<KEY, VALUE>}
+   */
+  /**
+   * Sorts the elements of a sequence using the compare function.
+   * @method
+   * @param {(value, key) => any} selector - Callback that returns the value of the field being compared
+   * @param {(a, b) => number} comparer?
+   * @return {bee.Enumerable<KEY, VALUE>}
+   */
+  orderBy(selector := "", comparer := "") {
+    return bee.Enumerable.orderBy(this, selector, comparer)
+  }
+  /**
+   * Sorts the elements of a descending order according to their keys.
+   * @method
+   * @param {(value, key) => any} selector - Callback that returns the value of the field being compared
+   * @return {bee.Enumerable<KEY, VALUE>}
+   */
+  class orderByDescending extends bee.Enumerable.orderBy {
+    __New(source, selector := "") {
+      super.__New(source, selector, true)
+    }
+    /**
+     * Set additional conditions for sorting.
+     * @method
+     * @param {(value, key) => any} selector? - Callback that returns the value of the field being compared
+     * @param {boolean} [descending := false]
+     * @return {bee.Enumerable<KEY, VALUE>}
+     */
+    thenBy(selector := "") {
+      return super.thenBy(selector, true)
+    }
+  }
+  /**
+   * Sorts the elements of a descending order according to their keys.
+   * @method
+   * @param {(value, key) => any} selector - Callback that returns the value of the field being compared
+   * @return {bee.Enumerable<KEY, VALUE>}
+   */
+  orderByDescending(params*) {
+    return bee.Enumerable.orderByDescending(this, params*)
+  }
+  /**
+   * Reverse the direction of the sequence.
+   * @template KEY, VALUE
+   * @method
+   * @param {object<KEY, VALUE>} source
+   * @return {bee.Enumerable<KEY, VALUE>}
+   */
+  class reverse extends bee.rule.EnumerableFunc {
+    _init() {
+      this.pairs := bee.query(this.source).toArray()
+      this.current := this.pairs.length
+    }
+    _next(&key, &value := unset) {
+      if (!bee.hasKey(this.pairs, this.current)) {
+        return false
+      }
+
+      pair := this.pairs[this.current]
+      key := pair.key
+      value := pair.value
+      this.current--
+      return true
+    }
+  }
+  /**
+   * Reverse the direction of the sequence.
+   * @return {bee.Enumerable<KEY, VALUE>}
+   */
+  reverse() {
+    return bee.Enumerable.reverse(this)
+  }
+; #endregion Ordering
+; #region Converting
+  /**
+   * Convert to an `Array` of objects with key and value fields.
+   * @template KEY, VALUE
+   * @param {object<KEY, VALUE>} source
+   * @return {bee.Enumerable<KEY, VALUE>}
+   */
+  class toArray extends bee.rule.EnumerableConverter {
+    static behavior(enumerator) {
+      arr := []
+      for key, value in enumerator {
+        arr.push({ key: key, value: value })
+      }
+      return arr
+    }
+  }
+  /**
+   * Convert to an `Array` of objects with key and value fields.
+   * @return
+   */
+  toArray() {
+    return bee.Enumerable.toArray(this)
+  }
+  /**
+   * Converts to an `Array` consisting of `[ key, value ]`.
+   * @template KEY, VALUE
+   * @param {object<KEY, VALUE>} source
+   * @return {bee.Enumerable<[ KEY, VALUE ]>}
+   */
+  class toEntries extends bee.rule.EnumerableConverter {
+    static behavior(enumerator) {
+      entries := []
+      for key, value in enumerator {
+        entries.push([ key, value ])
+      }
+      return entries
+    }
+  }
+  /**
+   * Converts to an `Array` consisting of `[ key, value ]`.
+   * @return {bee.Enumerable<[ KEY, VALUE ]>}
+   */
+  toEntries() {
+    return bee.Enumerable.toEntries(this)
+  }
+  /**
+   * Converts `source` to an `Array` of keys.
+   * @method
+   * @param {bee.Enumerable}
+   * @return {Array<KEY>}
+   */
+  class toKeys extends bee.rule.EnumerableConverter {
+    static behavior(enumerator) {
+      arr := []
+      for key, value in enumerator {
+        arr.push(key)
+      }
+      return arr
+    }
+  }
+  /**
+   * Converts to an `Array` of keys.
+   */
+  toKeys() {
+    return bee.Enumerable.toKeys(this)
+  }
+  /**
+   * Convert to `Map`.
+   * @template KEY, VALUE
+   * @param {object<KEY, VALUE>} source
+   * @return {Map<KEY, VALUE>}
+   */
+  class toMap extends bee.rule.EnumerableConverter {
+    static behavior(enumerator) {
+      _map := Map()
+      for key, value in enumerator {
+        _map[key] := value
+      }
+      return _map
+    }
+  }
+  /**
+   * Convert to `Map`.
+   * @return {Map<KEY, VALUE>}
+   */
+  toMap() {
+    return bee.Enumerable.toMap(this)
+  }
+  /**
+   * Convert to `Object`.
+   * @param {object<KEY, VALUE>} source
+   * @return {Object<KEY, VALUE>}
+   */
+  class toObject extends bee.rule.EnumerableConverter {
+    static behavior(enumerator) {
+      obj := {}
+      for key, value in enumerator {
+        obj.%key% := value
+      }
+      return obj
+    }
+  }
+  /**
+   * Convert to `Object`.
+   * @return {Object<KEY, VALUE>}
+   */
+  toObject() {
+    return bee.Enumerable.toObject(this)
+  }
+  /**
+   * Converts `source` to an `Array` of values.
+   * @method
+   * @param {bee.Enumerable}
+   * @return {Array<VALUE>}
+   */
+  class toValues extends bee.rule.EnumerableConverter {
+    static behavior(enumerator) {
+      arr := []
+      for key, value in enumerator {
+        arr.push(value)
+      }
+      return arr
+    }
+  }
+  /**
+   * Convert to an `Array` of values.
+   */
+  toValues() {
+    return bee.Enumerable.toValues(this)
+  }
+
+  /**
+   * `Array` and `Map` are converted to Enumerator, and the rest to improved Enumerator-like function.
+   *
+   * **Note that this means that using the `is` operator does not always return `true`, such as follows.*
+   * @template KEY, VALUE
+   * @param {object<KEY, VALUE.} source
+   * @return {Enumerator | (&key: KEY, &value?: VALUE) => boolean}
+   */
+  static toEnumeratorLike(source) {
+    if (source is Enumerator) {
+      return source
+    }
+
+    if (source is bee.Enumerable) {
+      if (bee.isPrimitive(source.source)) {
+        return source
+      }
+      if (source.source is bee.Enumerable) {
+        return source.source.__Enum(2)
+      }
+      return this.toEnumeratorLike(source.source)
+    }
+    if (source is Array || source is Map) {
+      return source.__Enum(2)
+    }
+    return EnumeratorWrapper.bind(source, source.ownProps())
+
+    EnumeratorWrapper(obj, enumerator, &key, &value) {
+      hasNext := enumerator(&_key)
+      if (!hasNext) {
+        return false
+      }
+      key := _key
+      value := obj.%key%
+      return true
+    }
+  }
+  /**
+   * `Array` and `Map` are converted to Enumerator, and the rest to improved Enumerator-like function.
+   *
+   * **Note that this means that using the `is` operator does not always return `true`, such as follows.**
+   * @return {Enumerator | (&key: KEY, &value?: VALUE) => boolean}
+   */
+  toEnumeratorLike() {
+    return bee.Enumerable.toEnumeratorLike(this)
+  }
+; #endregion Converting
+}

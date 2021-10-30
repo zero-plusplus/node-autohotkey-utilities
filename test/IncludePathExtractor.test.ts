@@ -2,7 +2,7 @@ import * as path from 'path';
 import { AhkVersion, IncludePathExtractor } from '../src';
 
 const v1_1 = new AhkVersion('1.1.33.10');
-// const v2_0_b2 = new AhkVersion('2.0-beta.2');
+const v2_0_b2 = new AhkVersion('2.0-beta.2');
 
 describe('v1', () => {
   const rootDirPath = path.resolve(__dirname, 'sample', 'ahk');
@@ -20,5 +20,14 @@ describe('v1', () => {
       path.resolve(`${rootDirPath}/lib/.DotLibFile.ahk`),
       path.resolve(`${rootDirPath}/.DotFile.ahk`),
     ]);
+  });
+});
+
+describe('v2', () => {
+  const rootDirPath = path.resolve(__dirname, 'sample', 'bee.ahk2');
+  const rootPath = path.resolve(rootDirPath, 'bee.ahk2');
+  const extractor = new IncludePathExtractor(v2_0_b2);
+  test('extract()', () => {
+    expect(extractor.extract(rootPath).length).toEqual(74);
   });
 });

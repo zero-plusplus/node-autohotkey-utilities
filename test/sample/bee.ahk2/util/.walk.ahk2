@@ -1,0 +1,14 @@
+﻿/**
+ * Apply `callback` to all fields of `target`, including its children.
+ * @param {any} target
+ * @param {(pair: { key: any; value: any }) => void}
+ */
+static walk(target, callback) {
+  for key, value in bee.Enumerable.toEnumeratorLike(target) {
+    callback(value, key, target)
+    if (bee.isObject(value)) {
+      bee.walk(value, callback)
+      continue
+    }
+  }
+}

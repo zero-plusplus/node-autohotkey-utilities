@@ -1,0 +1,19 @@
+﻿class util {
+  #Include .callback.ahk2
+  #Include .compare.ahk2
+  #Include .compareIgnoreCase.ahk2
+  #Include .curry.ahk2
+  #Include .getNestedProp.ahk2
+  #Include .getProp.ahk2
+  #Include .matcher.ahk2
+  #Include .nameOf.ahk2
+  #Include .noop.ahk2
+  #Include .partial.ahk2
+  #Include .query.ahk2
+  #Include .toArray.ahk2
+  #Include .toBoolean.ahk2
+  #Include .toNumber.ahk2
+  #Include .tryGetNestedProp.ahk2
+  #Include .tryGetProp.ahk2
+  #Include .walk.ahk2
+}
