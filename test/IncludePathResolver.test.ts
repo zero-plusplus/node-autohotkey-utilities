@@ -1,6 +1,5 @@
 import * as path from 'path';
-import { AhkVersion } from '../src';
-import { IncludePathResolver } from '../src/modules/IncludePathResolver';
+import { AhkVersion, IncludePathResolver } from '../src';
 
 const v1_1 = new AhkVersion('1.1.33.10');
 const v2_0_b2 = new AhkVersion('2.0-beta.2');
