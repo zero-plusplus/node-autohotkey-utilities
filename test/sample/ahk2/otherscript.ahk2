@@ -1,1 +1,1 @@
-﻿MsgBox otherscript
+﻿MsgBox("otherscript")

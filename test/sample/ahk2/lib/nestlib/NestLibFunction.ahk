@@ -1,4 +1,4 @@
 ﻿NestLibFunction()
 {
-    MsgBox NestLibFunction
+    MsgBox("NestLibFunction")
 }

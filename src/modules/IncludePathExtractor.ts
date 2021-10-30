@@ -35,7 +35,7 @@ export class IncludePathExtractor {
     }
 
     const source = readFileSync(rootPath, 'utf-8');
-    const includeLinesMatch = [ ...source.matchAll(/^(?<!;)(\s*)#Include(?:|(?<isAgainMode>Again))\s+(?:|(?<isOptional>[*]i)\s+)(?:(?<includePath>[^*\s\r\n<>]+)|<(?<libraryPath>[^*\s\r\n<>]+)>)[^\S\r\n]*(\r\n|\n)/gium) ];
+    const includeLinesMatch = [ ...source.matchAll(/^(?<!;)(\s*)#Include(?:|(?<isAgainMode>Again))\s+(?:|(?<isOptional>[*]i)\s+)(?:(?<includePath>[^*\s\r\n<>]+)|<(?<libraryPath>[^*\s\r\n<>]+)>)[^\S\r\n]*(\r\n|\n)?/gium) ];
     const extractedIncludePathList: string[] = [];
     for (const includeLineMatch of includeLinesMatch) {
       const { isAgainMode, isOptional, includePath, libraryPath } = includeLineMatch.groups!;

@@ -4,5 +4,5 @@
 }
 LocalLibFunction_MsgBox(msg)
 {
-    msgbox %msg%
+    MsgBox(msg)
 }

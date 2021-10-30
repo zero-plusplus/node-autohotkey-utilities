@@ -1,12 +1,12 @@
 ﻿; #Include <Comment>
 #Include <LocalLibClass>
-#Include ./otherscript.ahk
-#Include ./otherscript2.ahk
+#Include ./otherscript.ahk2
+#Include ./otherscript2.ahk2
 
 #Include %A_LineFile%\..\lib\nestlib
 #Include NestLibClass.ahk
 #Include NestLibFunction.ahk
 
 #Include <.DotLibFile>
-#Include %A_LineFile%\..\.DotFile.ahk
+#Include %A_LineFile%\..\.DotFile.ahk2
 LocalLibFunction_MsgBox(StrSplit(A_ScriptName, ".")[1])

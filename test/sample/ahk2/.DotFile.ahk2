@@ -1,1 +1,1 @@
-﻿FileAppend, .Dot, *
+﻿FileAppend(".DotFile", "*")
