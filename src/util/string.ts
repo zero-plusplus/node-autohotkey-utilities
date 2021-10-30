@@ -1,6 +1,6 @@
 
 export const indent = (str: string, indent: string): string => {
-  return `${indent}${str.replace(/(\r\n|\n)/gu, `$1${indent}`)}`;
+  return `${indent}${str.replace(/(\r\n|(?<!\r)\n)/gu, `$1${indent}`)}`;
 };
 export const getIndent = (str: string): string => {
   const indentMatch = str.match(/^(\s*)/u);

@@ -2,7 +2,7 @@ import * as path from 'path';
 import { readFileSync } from 'fs';
 import { AhkVersion } from './AhkVersion';
 import { IncludePathResolver, SupportVariables, defaultSupportVariables } from './IncludePathResolver';
-import { addBom, stripBom, toCrlf } from '../util/string';
+import { addBom, indent as indentStr, stripBom, toCrlf } from '../util/string';
 import { IncludeInfo } from './IncludePathExtractor';
 import { isDirExist, isPathExist } from '../util/file';
 import { ImplicitFunctionPathExtractor } from './ImplicitFunctionPathExtractor';
@@ -40,7 +40,7 @@ export class IncludeInliner {
 
       const source = stripBom(readFileSync(filePath, 'utf-8'));
       return source.replace(/^(?<!;)(?<indent>\s*)#Include(?:|(?<isAgainMode>Again))\s+(?:|(?<isOptional>[*]i)\s+)(?:(?<includePath>[^*\s\r\n<>]+)|<(?<libraryPath>[^*\s\r\n<>]+)>)[^\r\n\S]*(?<linebreak>\r\n|\n)?/gium, (...params) => {
-        const { isAgainMode, isOptional, includePath, libraryPath, linebreak } = params[params.length - 1]!;
+        const { indent, isAgainMode, isOptional, includePath, libraryPath, linebreak } = params[params.length - 1]!;
         const includeInfo: IncludeInfo = {
           isAgainMode: Boolean(isAgainMode),
           isLibraryMode: Boolean(libraryPath),
@@ -58,7 +58,7 @@ export class IncludeInliner {
           return '';
         }
         if (isPathExist(resolvedPath)) {
-          const inlined = inline(resolvedPath, variables);
+          const inlined = indentStr(inline(resolvedPath, variables), indent);
           return linebreak ? `${inlined}${String(linebreak)}` : inlined;
         }
         throw Error(`File not found => "${resolvedPath}"`);
