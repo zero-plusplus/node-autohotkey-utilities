@@ -11,6 +11,8 @@ describe('v1', () => {
 
   test('extract()', () => {
     expect(extractor.extract(rootPath)).toEqual([
+      path.resolve(`${rootDirPath}/lib/Recurse_A.ahk`),
+      path.resolve(`${rootDirPath}/lib/Recurse_B.ahk`),
       path.resolve(`${rootDirPath}/lib/LocalLibClass.ahk`),
       path.resolve(`${rootDirPath}/lib/LocalLibFunction.ahk`),
       path.resolve(`${rootDirPath}/otherscript.ahk`),

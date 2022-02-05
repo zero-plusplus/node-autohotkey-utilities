@@ -2,7 +2,6 @@ import * as path from 'path';
 import { readFileSync } from 'fs';
 import { AhkVersion } from './AhkVersion';
 import { IncludePathResolver, SupportVariables, defaultSupportVariables } from './IncludePathResolver';
-import insensitiveUniq from '../util/insensitiveUniq';
 import { isDirExist, isPathExist } from '../util/file';
 
 
@@ -23,7 +22,7 @@ export class IncludePathExtractor {
   /**
    * @param libraryTypes
    */
-  public extract(rootPath: string, overwriteVariables?: Partial<SupportVariables>): string[] {
+  public extract(rootPath: string, overwriteVariables?: Partial<SupportVariables>, _result: string[] = []): string[] {
     const variables = {
       ...defaultSupportVariables,
       ...overwriteVariables,
@@ -50,16 +49,20 @@ export class IncludePathExtractor {
       if (!resolvedPath) {
         continue;
       }
+      if (_result.some((libPath) => libPath.toLowerCase() === resolvedPath.toLowerCase())) {
+        continue;
+      }
 
       if (isDirExist(resolvedPath)) {
         variables.PseudoVariable_IncludeBaseDir = resolvedPath;
         continue;
       }
       if (isPathExist(resolvedPath)) {
+        _result.push(resolvedPath);
         extractedIncludePathList.push(resolvedPath);
-        extractedIncludePathList.push(...(this.extract(resolvedPath, variables)));
+        extractedIncludePathList.push(...(this.extract(resolvedPath, variables, _result)));
       }
     }
-    return insensitiveUniq(extractedIncludePathList);
+    return extractedIncludePathList;
   }
 }

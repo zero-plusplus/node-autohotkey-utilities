@@ -1,4 +1,5 @@
 ﻿; #Include <Comment>
+#Include <Recurse_A>
 #Include <LocalLibClass>
 #Include ./otherscript.ahk
 #Include ./otherscript2.ahk
