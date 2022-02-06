@@ -66,7 +66,8 @@ export class IncludeInliner {
     };
 
     const inlinedSource = inline(rootPath, overwriteVariables);
-    const implictFunctions = this.extractor.extract(rootPath).map((filePath) => {
+    const implictFunctionPathList = this.extractor.extract(rootPath, variables);
+    const implictFunctions = implictFunctionPathList.map((filePath) => {
       return stripBom(readFileSync(filePath, 'utf-8'));
     }).join('\r\n');
     const newSource = implictFunctions ? `${implictFunctions}\r\n${inlinedSource}` : inlinedSource;

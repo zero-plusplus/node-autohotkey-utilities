@@ -9,7 +9,10 @@ describe('v1', () => {
   const rootPath = path.resolve(rootDirPath, 'main.ahk');
 
   test('extract()', (): void => {
-    const actual = extractor.extract(rootPath);
-    expect(actual).toEqual([ path.resolve(rootDirPath, 'lib', 'LocalLibFunction.ahk') ]);
+    const actual = extractor.extract(rootPath, { A_AhkPath: `${rootDirPath}/stdlib/dummy.exe` });
+    expect(actual).toEqual([
+      path.resolve(rootDirPath, 'lib', 'ImplicitFunction.ahk'),
+      path.resolve(rootDirPath, 'lib', 'LocalLibFunction.ahk'),
+    ]);
   });
 });

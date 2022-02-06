@@ -5,17 +5,16 @@ import { IncludePathExtractor } from './IncludePathExtractor';
 import { SupportVariables, defaultSupportVariables, getLibraryDirList } from './IncludePathResolver';
 
 export class ImplicitFunctionPathExtractor extends IncludePathExtractor {
-  public extract(filePath: string | string[], overwriteVariables?: Partial<SupportVariables>): string[] {
+  public extract(rootPath: string, overwriteVariables?: Partial<SupportVariables>): string[] {
     if (2 < this.version.mejor) {
       return [];
     }
 
-    const filePathList = Array.isArray(filePath) ? filePath : [ filePath, ...new IncludePathExtractor(this.version).extract(filePath) ];
+    const loadedScriptPathList = [ rootPath, ...new IncludePathExtractor(this.version).extract(rootPath) ];
     const variables = {
       ...defaultSupportVariables,
       ...overwriteVariables,
     };
-    const rootPath = filePathList[0];
     if (!variables.A_ScriptDir) {
       variables.A_ScriptDir = path.dirname(rootPath);
     }
@@ -23,33 +22,25 @@ export class ImplicitFunctionPathExtractor extends IncludePathExtractor {
       variables.A_WorkingDir = variables.A_ScriptDir;
     }
 
-    const implicitLibraryPathList: string[] = [];
-    for (const libraryDirPath of getLibraryDirList(variables)) {
-      if (!isDirExist(libraryDirPath)) {
-        continue;
-      }
-      const libraryFilePathList = (readdirSync(libraryDirPath)).filter((file) => (/\.ahk$/iu).test(file));
+    const libraryFilePathList = getLibraryDirList(variables)
+      .flatMap((libraryDirPath) => (isDirExist(libraryDirPath) ? readdirSync(libraryDirPath) : []).map((libraryName) => path.resolve(`${libraryDirPath}/${libraryName}`)))
+      .filter((libraryDirPath) => (/(?<=\\|\/)([\w_$#@]+)\.ahk$/ui).test(libraryDirPath));
 
-      let libraryPath: string | undefined;
-      for (const libraryFileName of libraryFilePathList) {
-        const libraryNameMatch = libraryFileName.match(/^([\w_$#@]+)\.ahk$/iu);
-        if (!libraryNameMatch) {
+    const implicitLibraryPathList: string[] = [];
+    for (const filePath of loadedScriptPathList) {
+      const source = readFileSync(filePath, 'utf-8')
+        .replaceAll(/\/\*.*\*\//gu, ''); // Remove block comment
+
+      for (const libraryFilePath of libraryFilePathList) {
+        if (implicitLibraryPathList.includes(libraryFilePath)) {
           continue;
         }
-        const libraryName = libraryNameMatch[1];
 
-        for (const filePath of filePathList) {
-          const source = readFileSync(filePath, 'utf-8');
-          const isCallImplictFunction = new RegExp(`${libraryName}(?:|_[^\\(\\)]+)\\(.*\\)`, 'ui').test(source);
-          if (isCallImplictFunction) {
-            libraryPath = path.resolve(libraryDirPath, libraryFileName);
-            break;
-          }
+        const libraryName = path.basename(libraryFilePath).replace(/\.ahk$/ui, '');
+        const isCallImplictFunction = new RegExp(`(?<!;)\\s*${libraryName}(_[\\w_#@$]+)?\\(.*\\)`, 'ui').test(source);
+        if (isCallImplictFunction) {
+          implicitLibraryPathList.push(libraryFilePath);
         }
-      }
-
-      if (libraryPath) {
-        implicitLibraryPathList.push(libraryPath);
       }
     }
     return implicitLibraryPathList;
