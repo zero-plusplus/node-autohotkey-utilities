@@ -1,5 +1,5 @@
 ﻿NestLibFunction()
 {
-    LocalLibFunction();
+    LocalLibFunction(1, 2)
     MsgBox NestLibFunction
 }
