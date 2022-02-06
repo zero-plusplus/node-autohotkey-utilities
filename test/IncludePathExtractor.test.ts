@@ -10,7 +10,8 @@ describe('v1', () => {
   const extractor = new IncludePathExtractor(v1_1);
 
   test('extract()', () => {
-    expect(extractor.extract(rootPath)).toEqual([
+    expect(extractor.extract(rootPath, { A_AhkPath: `${rootDirPath}/stdlib/dummy.exe` })).toEqual([
+      path.resolve(`${rootDirPath}/stdlib/lib/StandardLibrary.ahk`),
       path.resolve(`${rootDirPath}/lib/Recurse_A.ahk`),
       path.resolve(`${rootDirPath}/lib/Recurse_B.ahk`),
       path.resolve(`${rootDirPath}/lib/LocalLibClass.ahk`),
