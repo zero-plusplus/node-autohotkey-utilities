@@ -141,7 +141,7 @@ export interface SupportVariables {
   readonly PseudoVariable_IncludeBaseDir: string;
 }
 export const defaultSupportVariables: SupportVariables = {
-  A_AhkPath: `${String(process.env.ProgramFiles)}\\AutoHotkey\\AutoHotkey.exe`,
+  A_AhkPath: '',
   A_AppData: String(process.env.APPDATA),
   A_AppDataCommon: String(process.env.ProgramData),
   A_ComputerName: String(process.env.COMPUTERNAME),
@@ -169,8 +169,30 @@ export const defaultSupportVariables: SupportVariables = {
   A_WorkingDir: '',
   PseudoVariable_IncludeBaseDir: '',
 };
-export const userLibraryDir = `${String(process.env.USERPROFILE)}/Documents/AutoHotkey`;
-export const standardLibraryDir = `${String(process.env.ProgramFiles)}\\AutoHotkey\\lib`;
+
+export const getLibraryDirList = (variables: SetRequired<Partial<SupportVariables>, 'A_ScriptDir'>): string[] => {
+  const dirList = [
+    path.resolve(variables.A_ScriptDir, 'lib'),
+    variables.A_MyDocuments ? `${variables.A_MyDocuments}/AutoHotkey` : `${String(process.env.USERPROFILE)}/Documents/AutoHotkey/lib`,
+  ];
+  if (variables.A_AhkPath) {
+    dirList.push(path.resolve(`${variables.A_AhkPath}/../lib`));
+  }
+  return dirList;
+};
+
+export const convertLibraryNameToPath = (libraryName: string, variables: SetRequired<Partial<SupportVariables>, 'A_ScriptDir'>): string | undefined => {
+  const libraryDirPathList = getLibraryDirList(variables);
+
+  for (const libraryDir of libraryDirPathList) {
+    const libraryPath = path.resolve(libraryDir, `${libraryName}.ahk`);
+    if (isPathExist(libraryPath)) {
+      return libraryPath;
+    }
+  }
+  return undefined;
+};
+
 
 export class IncludePathResolver {
   public readonly version: AhkVersion;
@@ -194,7 +216,7 @@ export class IncludePathResolver {
     }
 
     if (includePath.startsWith('<') && includePath.endsWith('>')) {
-      const libraryPath = this.getLibraryPath(includePath.slice(1, -1), variables);
+      const libraryPath = convertLibraryNameToPath(includePath.slice(1, -1), variables);
       return libraryPath;
     }
 
@@ -214,16 +236,5 @@ export class IncludePathResolver {
       }
       return original;
     });
-  }
-  private getLibraryPath(libraryName: string, variables: SetRequired<Partial<SupportVariables>, 'A_ScriptDir'>): string | undefined {
-    const libraryDirPathList = [ path.resolve(variables.A_ScriptDir, 'lib'), userLibraryDir, standardLibraryDir ];
-
-    for (const libraryDir of libraryDirPathList) {
-      const libraryPath = path.resolve(libraryDir, `${libraryName}.ahk`);
-      if (isPathExist(libraryPath)) {
-        return libraryPath;
-      }
-    }
-    return undefined;
   }
 }

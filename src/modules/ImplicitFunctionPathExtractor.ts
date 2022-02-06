@@ -1,23 +1,16 @@
 import { readFileSync, readdirSync } from 'fs';
 import * as path from 'path';
-import { IncludePathExtractor } from '..';
 import { isDirExist } from '../util/file';
-import { AhkVersion } from './AhkVersion';
-import { SupportVariables, defaultSupportVariables, standardLibraryDir, userLibraryDir } from './IncludePathResolver';
+import { IncludePathExtractor } from './IncludePathExtractor';
+import { SupportVariables, defaultSupportVariables, getLibraryDirList } from './IncludePathResolver';
 
-export class ImplicitFunctionPathExtractor {
-  public readonly version: AhkVersion;
-  private readonly extractor: IncludePathExtractor;
-  constructor(version: AhkVersion) {
-    this.version = version;
-    this.extractor = new IncludePathExtractor(version);
-  }
+export class ImplicitFunctionPathExtractor extends IncludePathExtractor {
   public extract(filePath: string | string[], overwriteVariables?: Partial<SupportVariables>): string[] {
     if (2 < this.version.mejor) {
       return [];
     }
 
-    const filePathList = Array.isArray(filePath) ? filePath : [ filePath, ...this.extractor.extract(filePath) ];
+    const filePathList = Array.isArray(filePath) ? filePath : [ filePath, ...new IncludePathExtractor(this.version).extract(filePath) ];
     const variables = {
       ...defaultSupportVariables,
       ...overwriteVariables,
@@ -30,10 +23,8 @@ export class ImplicitFunctionPathExtractor {
       variables.A_WorkingDir = variables.A_ScriptDir;
     }
 
-    const libraryDirPathList = [ path.resolve(path.dirname(rootPath), 'lib'), userLibraryDir, standardLibraryDir ];
-
     const implicitLibraryPathList: string[] = [];
-    for (const libraryDirPath of libraryDirPathList) {
+    for (const libraryDirPath of getLibraryDirList(variables)) {
       if (!isDirExist(libraryDirPath)) {
         continue;
       }
