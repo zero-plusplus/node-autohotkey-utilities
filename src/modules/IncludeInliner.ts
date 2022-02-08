@@ -5,16 +5,16 @@ import { IncludePathResolver, SupportVariables, defaultSupportVariables } from '
 import { addBom, indent as indentStr, stripBom, toCrlf } from '../util/string';
 import { IncludeInfo } from './IncludePathExtractor';
 import { isDirExist, isPathExist } from '../util/file';
-import { ImplicitFunctionPathExtractor } from './ImplicitFunctionPathExtractor';
+import { ImplicitLibraryPathExtractor } from './ImplicitLibraryPathExtractor';
 
 export class IncludeInliner {
   public readonly version: AhkVersion;
   private readonly resolver: IncludePathResolver;
-  private readonly extractor: ImplicitFunctionPathExtractor;
+  private readonly extractor: ImplicitLibraryPathExtractor;
   constructor(version: AhkVersion) {
     this.version = version;
     this.resolver = new IncludePathResolver(version);
-    this.extractor = new ImplicitFunctionPathExtractor(version);
+    this.extractor = new ImplicitLibraryPathExtractor(version);
   }
   /**
    * @param libraryTypes

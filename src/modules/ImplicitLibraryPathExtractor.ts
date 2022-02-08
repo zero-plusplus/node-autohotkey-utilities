@@ -4,13 +4,11 @@ import { isDirExist } from '../util/file';
 import { IncludePathExtractor } from './IncludePathExtractor';
 import { SupportVariables, defaultSupportVariables, getLibraryDirList } from './IncludePathResolver';
 
-export class ImplicitFunctionPathExtractor extends IncludePathExtractor {
-  public extract(rootPath: string, overwriteVariables?: Partial<SupportVariables>): string[] {
+export class ImplicitLibraryPathExtractor extends IncludePathExtractor {
     if (2 < this.version.mejor) {
       return [];
     }
 
-    const loadedScriptPathList = [ rootPath, ...new IncludePathExtractor(this.version).extract(rootPath) ];
     const variables = {
       ...defaultSupportVariables,
       ...overwriteVariables,
