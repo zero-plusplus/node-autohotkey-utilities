@@ -5,14 +5,17 @@ import { IncludePathExtractor } from './IncludePathExtractor';
 import { SupportVariables, defaultSupportVariables, getLibraryDirList } from './IncludePathResolver';
 
 export class ImplicitLibraryPathExtractor extends IncludePathExtractor {
+  public extract(rootPathOrLoadedSources: string | string[], overwriteVariables?: Partial<SupportVariables>): string[] {
     if (2 < this.version.mejor) {
       return [];
     }
 
+    const loadedScriptPathList = Array.isArray(rootPathOrLoadedSources) ? rootPathOrLoadedSources : [ rootPathOrLoadedSources, ...new IncludePathExtractor(this.version).extract(rootPathOrLoadedSources) ];
     const variables = {
       ...defaultSupportVariables,
       ...overwriteVariables,
     };
+    const rootPath = loadedScriptPathList[0];
     if (!variables.A_ScriptDir) {
       variables.A_ScriptDir = path.dirname(rootPath);
     }
