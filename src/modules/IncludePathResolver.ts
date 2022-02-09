@@ -220,7 +220,7 @@ export class IncludePathResolver {
       return libraryPath;
     }
 
-    const deferencedPath = this.deference(includePath, variables);
+    const deferencedPath = this.dereference(includePath, variables);
     if (path.isAbsolute(deferencedPath)) {
       return path.resolve(deferencedPath);
     }
@@ -229,7 +229,7 @@ export class IncludePathResolver {
     }
     return 2 <= this.version.mejor ? path.resolve(variables.A_LineFile, '..', deferencedPath) : path.resolve(variables.A_ScriptDir, deferencedPath);
   }
-  private deference(includePath: string, supportVariables: SupportVariables): string {
+  private dereference(includePath: string, supportVariables: SupportVariables): string {
     return includePath.replace(/%(?<variableName>[^%\r\n]+)%/gu, (original, variableName): string => {
       if (Object.prototype.hasOwnProperty.call(supportVariables, variableName)) {
         return String(supportVariables[variableName]);
