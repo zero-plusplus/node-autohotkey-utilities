@@ -6,7 +6,7 @@ import { SupportVariables, defaultSupportVariables, getLibraryDirList } from './
 
 export class ImplicitLibraryPathExtractor extends IncludePathExtractor {
   public extract(rootPathOrLoadedSources: string | string[], overwriteVariables?: Partial<SupportVariables>): string[] {
-    if (2 < this.version.mejor) {
+    if (this.version.greaterThanEquals('2.0-a128')) {
       return [];
     }
 
