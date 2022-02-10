@@ -87,6 +87,12 @@ export class AhkVersion {
     if (typeof this.alpha === 'number' && typeof targetVersion.beta === 'number') {
       return -1;
     }
+    if ((typeof this.alpha === 'undefined' && typeof this.beta === 'undefined') && (typeof targetVersion.alpha === 'number' || typeof targetVersion.beta === 'number')) {
+      return 1;
+    }
+    if ((typeof targetVersion.alpha === 'undefined' && typeof targetVersion.beta === 'undefined') && (typeof this.alpha === 'number' || typeof this.beta === 'number')) {
+      return -1;
+    }
     return 0;
   }
 }
