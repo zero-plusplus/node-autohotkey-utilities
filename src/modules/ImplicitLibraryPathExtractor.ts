@@ -30,6 +30,8 @@ export class ImplicitLibraryPathExtractor extends IncludePathExtractor {
     const implicitLibraryPathList: string[] = [];
     for (const filePath of loadedScriptPathList) {
       const source = readFileSync(filePath, 'utf-8')
+        .replaceAll(2 <= this.version.mejor ? /("(`"|[^"\r\n])*"|'(`'|[^'\r\n])*')/gu : /"(""|[^"\r\n])*"/gu, '') // Remove string literal
+        .replaceAll(/(^|\s+);[^\r\n]*/gu, '') // Remove line comment
         .replaceAll(/\/\*.*\*\//gu, ''); // Remove block comment
 
       for (const libraryFilePath of libraryFilePathList) {
