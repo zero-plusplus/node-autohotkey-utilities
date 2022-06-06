@@ -39,7 +39,7 @@ export class IncludeInliner {
       };
 
       const source = stripBom(readFileSync(filePath, 'utf-8'));
-      return source.replace(/^(?<!;)(?<indent>\s*)#Include(?:|(?<isAgainMode>Again))\s+(?:|(?<isOptional>[*]i)\s+)(?:(?<includePath>[^*\s\r\n<>]+)|<(?<libraryPath>[^*\s\r\n<>]+)>)[^\r\n\S]*(?<linebreak>\r\n|\n)?/gium, (...params) => {
+      return source.replace(/^(?<!;)(?<indent>[^\S\r\n]*)#Include(?:|(?<isAgainMode>Again))\s+(?:|(?<isOptional>[*]i)\s+)(?:(?<includePath>[^*\s\r\n<>]+)|<(?<libraryPath>[^*\s\r\n<>]+)>)[^\r\n\S]*(?<linebreak>\r\n|\n)?/gium, (...params) => {
         const { indent, isAgainMode, isOptional, includePath, libraryPath, linebreak } = params[params.length - 1]!;
         const includeInfo: IncludeInfo = {
           isAgainMode: Boolean(isAgainMode),
