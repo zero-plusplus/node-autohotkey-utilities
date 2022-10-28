@@ -5,11 +5,11 @@ const v1_1 = new AhkVersion('1.1.33.10');
 const v2_0_b2 = new AhkVersion('2.0-beta.2');
 
 describe('v1', () => {
-  const rootDirPath = path.resolve(__dirname, 'sample', 'ahk');
-  const rootPath = path.resolve(rootDirPath, 'main.ahk');
   const extractor = new IncludePathExtractor(v1_1);
 
   test('extract()', () => {
+    const rootDirPath = path.resolve(__dirname, 'sample', 'ahk');
+    const rootPath = path.resolve(rootDirPath, 'main.ahk');
     expect(extractor.extract(rootPath, { A_AhkPath: `${rootDirPath}/stdlib/dummy.exe` })).toEqual([
       path.resolve(`${rootDirPath}/stdlib/lib/StandardLibrary.ahk`),
       path.resolve(`${rootDirPath}/lib/Recurse_A.ahk`),
@@ -27,10 +27,29 @@ describe('v1', () => {
 });
 
 describe('v2', () => {
-  const rootDirPath = path.resolve(__dirname, 'sample', 'bee.ahk2');
-  const rootPath = path.resolve(rootDirPath, 'bee.ahk2');
   const extractor = new IncludePathExtractor(v2_0_b2);
+
   test('extract()', () => {
+    const rootDirPath = path.resolve(__dirname, 'sample', 'ahk2');
+    const rootPath = path.resolve(rootDirPath, 'main.ahk2');
+    expect(extractor.extract(rootPath, { A_AhkPath: `${rootDirPath}/stdlib/dummy.exe` })).toEqual([
+      path.resolve(`${rootDirPath}/stdlib/lib/StandardLibrary.ahk`),
+      path.resolve(`${rootDirPath}/lib/Recurse_A.ahk`),
+      path.resolve(`${rootDirPath}/lib/Recurse_B.ahk`),
+      path.resolve(`${rootDirPath}/lib/LocalLibClass.ahk`),
+      path.resolve(`${rootDirPath}/lib/LocalLibFunction.ahk`),
+      path.resolve(`${rootDirPath}/otherscript.ahk2`),
+      path.resolve(`${rootDirPath}/otherscript2.ahk2`),
+      path.resolve(`${rootDirPath}/lib/nestlib/NestLibClass.ahk`),
+      path.resolve(`${rootDirPath}/lib/nestlib/NestLibFunction.ahk`),
+      path.resolve(`${rootDirPath}/lib/.DotLibFile.ahk`),
+      path.resolve(`${rootDirPath}/.DotFile.ahk2`),
+    ]);
+  });
+
+  test('extract(): bee.ahk2', () => {
+    const rootDirPath = path.resolve(__dirname, 'sample', 'bee.ahk2');
+    const rootPath = path.resolve(rootDirPath, 'bee.ahk2');
     expect(extractor.extract(rootPath).length).toEqual(74);
   });
 });
