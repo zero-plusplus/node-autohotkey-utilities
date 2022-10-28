@@ -11,6 +11,6 @@
 
 #Include <.DotLibFile>
 #Include %A_LineFile%\..\.DotFile.ahk
-LocalLib_MsgBox(StrSplit(A_ScriptName, ".")[1])
+LocalLibFunction_MsgBox(StrSplit(A_ScriptName, ".")[1])
 ImplicitFunction()
 ; CommentImplicitFunction()
