@@ -22,5 +22,21 @@
         "program": "${workspaceFolder}/node_modules/jest/bin/jest"
       }
     },
+    {
+      "name": "AutoHotkey Sample Debug v1",
+      "type": "autohotkey",
+      "request": "launch",
+      "runtime": "${workspaceFolder}/test/sample/ahk/stdlib/AutoHotkey.exe",
+      "program": "${workspaceFolder}/test/sample/ahk/main.ahk",
+      "useAnnounce": "detail",
+    },
+    {
+      "name": "AutoHotkey Sample Debug v2",
+      "type": "autohotkey",
+      "request": "launch",
+      "runtime": "${workspaceFolder}/test/sample/ahk2/stdlib/AutoHotkey.exe",
+      "program": "${workspaceFolder}/test/sample/ahk2/main.ahk2",
+      "useAnnounce": "detail",
+    }
   ]
 }
