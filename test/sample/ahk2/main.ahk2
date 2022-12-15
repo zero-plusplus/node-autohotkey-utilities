@@ -3,7 +3,7 @@
 #Include <Recurse_A>
 #Include <LocalLibClass>
 #Include "./otherscript.ahk2"
-#Include './otherscript2.ahk2'
+#Include '%A_LineFile%/../otherscript2.ahk2'
 
 #Include %A_LineFile%\..\lib\nestlib
 #Include NestLibClass.ahk

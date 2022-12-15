@@ -25,6 +25,8 @@ describe('v2', () => {
   test('IncludePathResolver', () => {
     const resolver = new IncludePathResolver(v2_0_b2);
     expect(resolver.resolve('%A_LineFile%\\..\\main.ahk2', { A_LineFile: rootPath })).toEqual(path.resolve(rootDirPath, 'main.ahk2'));
+    expect(resolver.resolve('"%A_LineFile%\\..\\main.ahk2"', { A_LineFile: rootPath })).toEqual(path.resolve(rootDirPath, 'main.ahk2'));
+    expect(resolver.resolve(`'%A_LineFile%\\..\\main.ahk2'`, { A_LineFile: rootPath })).toEqual(path.resolve(rootDirPath, 'main.ahk2'));
     expect(resolver.resolve('.\\main.ahk2', { A_LineFile: rootPath })).toEqual(path.resolve(rootDirPath, 'main.ahk2'));
     expect(resolver.resolve('..\\main.ahk2', { A_LineFile: rootPath })).toEqual(path.resolve(rootDirPath, '..', 'main.ahk2'));
     expect(resolver.resolve('<LocalLibClass>', { A_LineFile: rootPath })).toEqual(path.resolve(rootDirPath, 'lib', 'LocalLibClass.ahk'));

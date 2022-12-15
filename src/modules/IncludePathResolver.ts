@@ -220,7 +220,7 @@ export class IncludePathResolver {
       return libraryPath;
     }
 
-    const deferencedPath = this.dereference(includePath, variables);
+    const deferencedPath = this.dereference((/^("|')/u).test(includePath) && (/("|')$/u).test(includePath) ? includePath.slice(1, -1) : includePath, variables);
     if (path.isAbsolute(deferencedPath)) {
       return path.resolve(deferencedPath);
     }
