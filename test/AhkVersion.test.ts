@@ -4,8 +4,9 @@ const v1_0 = new AhkVersion('1.0.48.05');
 const v1_1 = new AhkVersion('1.1.33.10');
 const v2_0 = new AhkVersion('2.0');
 const v2_0_a138 = new AhkVersion('2.0-a138-7538f26f');
-const v2_0_b2 = new AhkVersion('2.0-beta.2');
 const v2_0_a = new AhkVersion('2.0-alpha');
+const v2_0_b2 = new AhkVersion('2.0-beta.2');
+const v2_0_rc2 = new AhkVersion('2.0-rc.2');
 
 test('constructor', () => {
   const testVersion = (ver: AhkVersion, expectValues: { [key in keyof Pick<InstanceType<typeof AhkVersion>, 'mejor' | 'minor' | 'patch' | 'alpha' | 'beta'>]: number }): void => {
@@ -38,6 +39,14 @@ test('greaterThan', () => {
   expect(v1_1.greaterThan(v1_0)).toBeTruthy();
   expect(v1_0.greaterThan(v1_0)).toBeFalsy();
   expect(v1_0.greaterThan(v1_1)).toBeFalsy();
+
+  expect(v2_0_rc2.greaterThan(v2_0_a138)).toBeTruthy();
+  expect(v2_0_rc2.greaterThan(v2_0_a)).toBeTruthy();
+  expect(v2_0_rc2.greaterThan(v2_0_b2)).toBeTruthy();
+
+  expect(v2_0_b2.greaterThan(v2_0_a138)).toBeTruthy();
+  expect(v2_0_b2.greaterThan(v2_0_a)).toBeTruthy();
+  expect(v2_0_b2.greaterThan(v2_0_a)).toBeTruthy();
 });
 
 test('greaterThanEquals', () => {

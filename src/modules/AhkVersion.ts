@@ -7,6 +7,8 @@ export class AhkVersion {
   public readonly patch: number = 0;
   public readonly alpha?: number;
   public readonly beta?: number;
+  public readonly rc?: number;
+  public readonly codeNumber: number;
   constructor(version: string) {
     const splitedVersion = version.split('.').map((part) => {
       const versionPart = parseInt(part, 10);
@@ -19,16 +21,24 @@ export class AhkVersion {
     this.full = version;
     this.mejor = parseFloat(`${splitedVersion[0]}.${splitedVersion[1]}`);
 
+    this.codeNumber = 4;
     const alphaMatch = version.match(/-(?:a(\d+)|alpha)/u);
     if (alphaMatch) {
       this.alpha = typeof alphaMatch[1] === 'undefined' ? 0 : parseInt(alphaMatch[1], 10); // Note: AutoHotkey_H does not have the alpha code set. It is always `2.0-alpha`
+      this.codeNumber = 1;
     }
     const betaMatch = version.match(/-(?:beta\.)(\d+)/u);
     if (betaMatch) {
       this.beta = typeof betaMatch[1] === 'undefined' ? 0 : parseInt(betaMatch[1], 10);
+      this.codeNumber = 2;
+    }
+    const rcMatch = version.match(/-(?:rc\.)(\d+)/u);
+    if (rcMatch) {
+      this.rc = typeof rcMatch[1] === 'undefined' ? 0 : parseInt(rcMatch[1], 10);
+      this.codeNumber = 3;
     }
 
-    if (!this.alpha && !this.beta) {
+    if (!this.alpha && !this.beta && !this.rc) {
       this.minor = splitedVersion[2] ?? 0;
       this.patch = splitedVersion[3] ?? 0;
     }
@@ -81,18 +91,13 @@ export class AhkVersion {
     if (typeof this.beta === 'number' && typeof targetVersion.beta === 'number') {
       return this.beta - targetVersion.beta;
     }
+    if (typeof this.rc === 'number' && typeof targetVersion.rc === 'number') {
+      return this.rc - targetVersion.rc;
+    }
     if (typeof this.beta === 'number' && typeof targetVersion.alpha === 'number') {
       return 1;
     }
-    if (typeof this.alpha === 'number' && typeof targetVersion.beta === 'number') {
-      return -1;
-    }
-    if ((typeof this.alpha === 'undefined' && typeof this.beta === 'undefined') && (typeof targetVersion.alpha === 'number' || typeof targetVersion.beta === 'number')) {
-      return 1;
-    }
-    if ((typeof targetVersion.alpha === 'undefined' && typeof targetVersion.beta === 'undefined') && (typeof this.alpha === 'number' || typeof this.beta === 'number')) {
-      return -1;
-    }
-    return 0;
+
+    return this.codeNumber - targetVersion.codeNumber;
   }
 }
